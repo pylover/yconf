@@ -1,0 +1,11 @@
+[run]
+source = yconf
+patch = subprocess
+omit = 
+  tests
+
+
+[report]
+exclude_lines =
+	raise NotImplementedError
+	pragma: no cover
