@@ -2,20 +2,18 @@ from yconf.tokenizer import tokenize
 from yconf import tokens as t
 
 
-# TODO: capital letters
-# TODO: error on duplicate tokens
-def test_tokenizer():
+def test_tokenizer_keyvaluepair():
     tokens = tokenize('''
-      foo: abc
+      foo: abC
       bar: 123
-      baz: .2
+      BAZ: .2
     ''')
 
     tok = next(tokens)
     assert isinstance(tok, t.String)
     assert tok.indent == 6
     assert tok.key == 'foo'
-    assert tok.value == 'abc'
+    assert tok.value == 'abC'
 
     tok = next(tokens)
     assert isinstance(tok, t.Int)
@@ -26,5 +24,15 @@ def test_tokenizer():
     tok = next(tokens)
     assert isinstance(tok, t.Float)
     assert tok.indent == 6
-    assert tok.key == 'baz'
+    assert tok.key == 'BAZ'
     assert tok.value == .2
+
+
+def test_tokenizer_dict():
+    tokens = tokenize('''
+      foo:
+        bar: BAR
+    ''')
+
+    tok = next(tokens)
+    assert isinstance(tok, t.Key)

@@ -4,28 +4,34 @@ import functools
 
 
 class Token(abc.ABC):
-    def __init__(self, indent):
+    def __init__(self, lineno, indent):
+        self.lineno = lineno
         self.indent = len(indent)
 
 
-class KeyValuePair(Token):
-    def __init__(self, key, value, **kw):
+class Key(Token, metaclass=abc.ABCMeta):
+    def __init__(self, key, **kw):
         super().__init__(**kw)
         self.key = key
+
+
+class KeyValue(Key):
+    def __init__(self, value, **kw):
+        super().__init__(**kw)
         self.value = value
 
 
-class Int(KeyValuePair):
+class Int(KeyValue):
     def __init__(self, value, **kw):
         super().__init__(value=int(value), **kw)
 
 
-class Float(KeyValuePair):
+class Float(KeyValue):
     def __init__(self, value, **kw):
         super().__init__(value=float(value), **kw)
 
 
-class String(KeyValuePair):
+class String(KeyValue):
     pass
 
 
@@ -43,6 +49,7 @@ def patt_keyval(valpat):
 knowntokens = [
     (None, patt(r'^\s*#.*$')),
     (None, patt(r'^\s*$')),
+    (Key, patt(fr'{KEYPAT}$')),
     (Int, patt_keyval(r'\d*')),
     (Float, patt_keyval(r'[\.\d]*')),
     (String, patt_keyval(r'.*')),

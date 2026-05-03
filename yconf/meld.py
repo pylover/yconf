@@ -1,13 +1,57 @@
-# from .tokenizer import tokenize
+from .tokenizer import tokenize
 
 
 class Meld(dict):
-    # def _eatone(self, token):
-    #     pass
+    def __init__(self, value):
+        if isinstance(value, str):
+            self._parse(value)
 
-    # def _eatall(self, tokens):
-    #     first = next(tokens)
+    def __getattr__(self, key):
+        if key not in self:
+            raise AttributeError(key)
 
-    # def parse(self, s):
-    #     self._eatall(tokenize(s))
-    pass
+        return self[key]
+
+    def __setattr__(self, key, value):
+        if isinstance(value, dict):
+            super().__setitem__(key, Meld(value))
+            return
+
+        super().__setitem__(key, value)
+
+    def __delattr__(self, key):
+        if key not in self:
+            raise AttributeError(key)
+
+        del self[key]
+
+    def _eatone(self, token):
+        self[token.key] = token.value
+
+    def _eatall(self, tokens):
+        first = next(tokens)
+        idntoff = first.indent
+        idntsz = 0
+        curidnt = 0
+
+        self._eatone(first)
+        while True:
+            t = next(tokens)
+            idnt = t.indent - idntoff - curidnt
+            if not idnt:
+                self._eatone(t)
+                continue
+
+            # # new block
+            # if not idntsz
+            #     # preserve the indent size
+            #     idntsz = idnt
+            # elif idnt % idntsz:
+            #     raise YConfIndentationError(t.lineno)
+            # else:
+
+    def _parse(self, s):
+        try:
+            self._eatall(tokenize(s))
+        except StopIteration:
+            return

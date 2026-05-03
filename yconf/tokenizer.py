@@ -7,7 +7,7 @@ def token_parse(line, lineno):
     for typ, pattern in t.knowntokens:
         m = pattern.match(line)
         if m:
-            return typ(**m.groupdict()) if typ else None
+            return typ(lineno=lineno, **m.groupdict()) if typ else None
 
     else:
         raise InvalidTokenError(line, lineno)
