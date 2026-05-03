@@ -8,6 +8,7 @@ def test_tokenizer():
     tokens = tokenize('''
       foo: abc
       bar: 123
+      baz: .2
     ''')
 
     tok = next(tokens)
@@ -21,3 +22,9 @@ def test_tokenizer():
     assert tok.indent == 6
     assert tok.key == 'bar'
     assert tok.value == 123
+
+    tok = next(tokens)
+    assert isinstance(tok, t.Float)
+    assert tok.indent == 6
+    assert tok.key == 'baz'
+    assert tok.value == .2
