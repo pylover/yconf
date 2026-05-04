@@ -1,3 +1,5 @@
 - dumps
 - dumpfile
 - loadfile
+- reserved keys
+- quoted string

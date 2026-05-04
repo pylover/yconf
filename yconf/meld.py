@@ -1,4 +1,5 @@
-from .tokenizer import tokenize
+from .tokenizer import tokenize, Colon, Dash
+from .errors import IndentationError
 
 
 class Meld(dict):
@@ -26,7 +27,8 @@ class Meld(dict):
         del self[key]
 
     def _eatone(self, token):
-        self[token.key] = token.value
+        if isinstance(token, Colon):
+            self[token.key] = token.value
 
     def _eatall(self, tokens):
         first = next(tokens)
@@ -36,19 +38,26 @@ class Meld(dict):
 
         self._eatone(first)
         while True:
-            t = next(tokens)
-            idnt = t.indent - idntoff - curidnt
+            tok = next(tokens)
+            idnt = tok.indent - idntoff - curidnt
             if not idnt:
-                self._eatone(t)
+                self._eatone(tok)
                 continue
 
-            # # new block
-            # if not idntsz
-            #     # preserve the indent size
-            #     idntsz = idnt
-            # elif idnt % idntsz:
-            #     raise YConfIndentationError(t.lineno)
-            # else:
+            # new block
+            if not idntsz:
+                # preserve the indent size
+                idntsz = idnt
+
+            if idnt != idntsz:
+                raise errors.IndentationError(tok)
+
+            try:
+                nt = next(tokens)
+            except StopIteration:
+                # threat an None keyvalue token
+                self._eatone(tok)
+            # elif isinstance(nt, Dash):
 
     def _parse(self, s):
         try:
