@@ -1,6 +1,6 @@
 import pytest
 
-from yconf.tokenizer import tokenize, Token, Kind
+from yconf.tokenizer import tokenize, Kind
 
 
 def test_tokenizer_newline_indent_comment():
@@ -29,6 +29,12 @@ def test_tokenizer_string():
     assert next(tokenize('foo ')) == (Kind.STRING, 'foo ', 0, 0)
     assert next(tokenize('"foo"')) == (Kind.STRING, 'foo', 0, 0)
     assert next(tokenize('\'foo\'')) == (Kind.STRING, 'foo', 0, 0)
+    assert next(tokenize('3.')) == (Kind.STRING, '3.', 0, 0)
+
+    tokens = tokenize('foo: bar')
+    assert next(tokens) == (Kind.KEY, 'foo', 0, 0)
+    assert next(tokens) == (Kind.COLON, ':', 0, 3)
+    assert next(tokens) == (Kind.STRING, 'bar', 0, 5)
 
 
 def test_tokenizer_colon_dash():
@@ -56,60 +62,11 @@ def test_tokenizer_colon_dash():
 
 def test_tokenizer_float():
     assert next(tokenize('.1')) == (Kind.FLOAT, .1, 0, 0)
+    assert next(tokenize('3.1')) == (Kind.FLOAT, 3.1, 0, 0)
+    assert next(tokenize('-3.1')) == (Kind.FLOAT, -3.1, 0, 0)
+    assert next(tokenize('-.1')) == (Kind.FLOAT, -0.1, 0, 0)
 
 
-# def test_tokenizer_literal():
-#     assert not list(tokenize(''))
-#     assert not list(tokenize(' '))
-#
-#     tok = next(tokenize('foo'))
-#     assert isinstance(tok, Literal)
-#     assert tok.indent == 0
-#     assert tok.value == 'foo'
-#
-#
-# def test_tokenizer_colon():
-#     tokens = tokenize('''
-#       foo: abC
-#       bar: 123
-#       BAZ: .2
-#         thud: false
-#     ''')
-#
-#     tok = next(tokens)
-#     assert isinstance(tok, Colon)
-#     assert tok.indent == 6
-#     assert tok.key == 'foo'
-#     assert tok.value == 'abC'
-#
-#     tok = next(tokens)
-#     assert tok.key == 'bar'
-#     assert tok.value == 123
-#
-#     tok = next(tokens)
-#     assert tok.key == 'BAZ'
-#     assert tok.value == .2
-#
-#     tok = next(tokens)
-#     assert tok.key == 'thud'
-#     assert tok.indent == 8
-#     assert tok.value is False
-#
-#
-# def test_tokenizer_dash():
-#     tokens = tokenize('''
-#       - foo
-#       - 1
-#       - .3
-#     ''')
-#
-#     tok = next(tokens)
-#     assert isinstance(tok, Dash)
-#     assert tok.indent == 6
-#     assert tok.value == 'foo'
-#
-#     tok = next(tokens)
-#     assert tok.value == 1
-#
-#     tok = next(tokens)
-#     assert tok.value == .3
+def test_tokenizer_int():
+    assert next(tokenize('1')) == (Kind.INT, 1, 0, 0)
+    assert next(tokenize('-73')) == (Kind.INT, -73, 0, 0)
