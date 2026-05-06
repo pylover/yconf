@@ -56,21 +56,16 @@ patterns = [
 def tokenize(code: str) -> Iterable[Token]:
     pattern = '|'.join(f'(?P<{kind}>{pat})' for kind, pat in patterns)
     tok_regex = re.compile(pattern, re.MULTILINE | re.IGNORECASE)
-    line_num = 0
-    line_start = 0
+    line = 0
+    charindex = 0
 
     for mo in tok_regex.finditer(code):
         kind = mo.lastgroup
-        value = mo.group()
-        column = mo.start() - line_start
 
         if kind == Kind.SKIP or kind == Kind.COMMENT:
             continue
 
+        yield Token.new(kind, mo.group(), line, mo.start() - charindex)
         if kind == Kind.NEWLINE:
-            line_start = mo.end()
-            yield Token.new(kind, value, line_num, column)
-            line_num += 1
-            continue
-
-        yield Token.new(kind, value, line_num, column)
+            charindex = mo.end()
+            line += 1
