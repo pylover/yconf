@@ -3,26 +3,58 @@ import pytest
 from yconf.tokenizer import tokenize, Token, Kind
 
 
-def test_tokenizer_string():
-    assert next(tokenize('foo')) == (Kind.STRING, 'foo', 1, 0)
-
-def test_tokenizer_comment():
+def test_tokenizer_newline_indent_comment():
     tokens = tokenize('''
         foo
-        bar
+        bar baz
+        # comment
     ''')
 
-    assert next(tokens) == (Kind.NEWLINE, '\n', 1, 0)
+    assert next(tokens) == (Kind.NEWLINE, '\n', 0, 0)
+    assert next(tokens) == (Kind.INDENT, 8, 1, 0)
+    assert next(tokens) == (Kind.STRING, 'foo', 1, 8)
+    assert next(tokens) == (Kind.NEWLINE, '\n', 1, 11)
     assert next(tokens) == (Kind.INDENT, 8, 2, 0)
-    assert next(tokens) == (Kind.STRING, 'foo', 2, 8)
-    assert next(tokens) == (Kind.NEWLINE, '\n', 2, 11)
+    assert next(tokens) == (Kind.STRING, 'bar baz', 2, 8)
+    assert next(tokens) == (Kind.NEWLINE, '\n', 2, 15)
     assert next(tokens) == (Kind.INDENT, 8, 3, 0)
-    assert next(tokens) == (Kind.STRING, 'bar', 3, 8)
-    assert next(tokens) == (Kind.NEWLINE, '\n', 3, 11)
+    assert next(tokens) == (Kind.NEWLINE, '\n', 3, 17)
     assert next(tokens) == (Kind.INDENT, 4, 4, 0)
     with pytest.raises(StopIteration):
         next(tokens)
 
+
+def test_tokenizer_string():
+    assert next(tokenize('foo')) == (Kind.STRING, 'foo', 0, 0)
+    assert next(tokenize('"foo"')) == (Kind.STRING, 'foo', 0, 0)
+    assert next(tokenize('\'foo\'')) == (Kind.STRING, 'foo', 0, 0)
+
+
+def test_tokenizer_colon_dash():
+    tokens = tokenize('''\
+      foo:
+        - bar
+        -
+    ''')
+
+    assert next(tokens) == (Kind.INDENT, 6, 0, 0)
+    assert next(tokens) == (Kind.KEY, 'foo', 0, 6)
+    assert next(tokens) == (Kind.COLON, ':', 0, 9)
+    assert next(tokens) == (Kind.NEWLINE, '\n', 0, 10)
+    assert next(tokens) == (Kind.INDENT, 8, 1, 0)
+    assert next(tokens) == (Kind.DASH, '-', 1, 8)
+    assert next(tokens) == (Kind.STRING, 'bar', 1, 10)
+    assert next(tokens) == (Kind.NEWLINE, '\n', 1, 13)
+    assert next(tokens) == (Kind.INDENT, 8, 2, 0)
+    assert next(tokens) == (Kind.DASH, '-', 2, 8)
+    assert next(tokens) == (Kind.NEWLINE, '\n', 2, 9)
+    assert next(tokens) == (Kind.INDENT, 4, 3, 0)
+    with pytest.raises(StopIteration):
+        next(tokens)
+
+
+# def test_tokenizer_float():
+#     assert next(tokenize('.1')) == (Kind.STRING, .1, 0, 0)
 #     assert not list(tokenize('# foo'))
 #     assert not list(tokenize('  # foo'))
 #

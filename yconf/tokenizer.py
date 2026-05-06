@@ -4,12 +4,16 @@ from enum import StrEnum, auto
 
 
 class Kind(StrEnum):
-    STRING = auto()
     COMMENT = auto()
     SKIP = auto()
     MISMATCH = auto()
     INDENT = auto()
     NEWLINE = auto()
+    KEY = auto()
+    DASH = auto()
+    COLON = auto()
+    STRING = auto()
+    FLOAT = auto()
 
 
 class Token(NamedTuple):
@@ -22,16 +26,15 @@ class Token(NamedTuple):
 patterns = [
     (Kind.COMMENT, r'#.*'),
     (Kind.INDENT, r'^ +'),
-    (Kind.STRING, r'"[^"]*"|\'[^\']*\'|.+'),
+    (Kind.DASH, r'-(?=\s|$)'),
+    (Kind.COLON, r':'),
+    (Kind.KEY, r'[\w.-]+(?=:)'),
+    (Kind.FLOAT, r'\b(\.\d*|\d+\.\d+)\b'),
+    (Kind.STRING, r'"[^"]*"|\'[^\']*\'|[^\s].*'),
     (Kind.SKIP,  r'[ \t]+'),
     (Kind.MISMATCH, r'.'),
     (Kind.NEWLINE, r'\n'),
-
-    # ('DIRECTIVE',  r'^%YAML|---|\.\.\.'),      # YAML directives/doc markers
-    # ('DASH',       r'-(?=\s|$)'),              # List markers
-    # ('KEY',        r'[\w.-]+(?=:)'),         # Keys (text followed by colon)
-    # ('COLON',      r':'),                      # The colon separator
-    # ('NUMBER',     r'\b\d+(\.\d*)?\b'),        # Integers or decimals
+    # (Kind.INT, r'\b\d+(\.\d*)?\b'),
 ]
 
 
@@ -40,7 +43,7 @@ def tokenize(code: str) -> Iterable[Token]:
     # compile into one master regex
     pattern = '|'.join(f'(?P<{kind}>{pat})' for kind, pat in patterns)
     tok_regex = re.compile(pattern, re.MULTILINE | re.IGNORECASE)
-    line_num = 1
+    line_num = 0
     line_start = 0
 
     # iterate through matches
@@ -63,4 +66,8 @@ def tokenize(code: str) -> Iterable[Token]:
 
         if kind == Kind.INDENT:
             value = len(value)
+
+        if kind == Kind.STRING:
+            value = value.strip('"\'')
+
         yield Token(kind, value, line_num, column)
