@@ -33,7 +33,6 @@ def test_tokenizer_string():
 
     tokens = tokenize('foo: bar')
     assert next(tokens) == (Kind.KEY, 'foo', 0, 0)
-    assert next(tokens) == (Kind.COLON, ':', 0, 3)
     assert next(tokens) == (Kind.STRING, 'bar', 0, 5)
 
 
@@ -46,7 +45,6 @@ def test_tokenizer_colon_dash():
 
     assert next(tokens) == (Kind.INDENT, 6, 0, 0)
     assert next(tokens) == (Kind.KEY, 'foo', 0, 6)
-    assert next(tokens) == (Kind.COLON, ':', 0, 9)
     assert next(tokens) == (Kind.NEWLINE, '\n', 0, 10)
     assert next(tokens) == (Kind.INDENT, 8, 1, 0)
     assert next(tokens) == (Kind.DASH, '-', 1, 8)

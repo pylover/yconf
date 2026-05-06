@@ -10,7 +10,6 @@ class Kind(StrEnum):
     NEWLINE = auto()
     KEY = auto()
     DASH = auto()
-    COLON = auto()
     STRING = auto()
     FLOAT = auto()
     INT = auto()
@@ -36,6 +35,9 @@ class Token(NamedTuple):
         if kind == Kind.INT:
             value = int(value)
 
+        if kind == Kind.KEY:
+            value = value[:-1]
+
         return cls(kind, value, line, column)
 
 
@@ -43,8 +45,7 @@ patterns = [
     (Kind.COMMENT, r'#.*'),
     (Kind.INDENT, r'^ +'),
     (Kind.DASH, r'-(?=\s|$)'),
-    (Kind.COLON, r':'),
-    (Kind.KEY, r'[\w.-]+(?=:)'),
+    (Kind.KEY, r'[\w.-]+:'),
     (Kind.FLOAT, r'((?<=\s)|^)-?\d*\.\d+((?=\s)|$)'),
     (Kind.INT, r'((?<=\s)|^)-?\d+((?=\s)|$)'),
     (Kind.SKIP, r'[ \t]+'),
