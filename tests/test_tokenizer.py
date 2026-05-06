@@ -26,6 +26,7 @@ def test_tokenizer_newline_indent_comment():
 
 def test_tokenizer_string():
     assert next(tokenize('foo')) == (Kind.STRING, 'foo', 0, 0)
+    assert next(tokenize('foo ')) == (Kind.STRING, 'foo ', 0, 0)
     assert next(tokenize('"foo"')) == (Kind.STRING, 'foo', 0, 0)
     assert next(tokenize('\'foo\'')) == (Kind.STRING, 'foo', 0, 0)
 
@@ -53,12 +54,10 @@ def test_tokenizer_colon_dash():
         next(tokens)
 
 
-# def test_tokenizer_float():
-#     assert next(tokenize('.1')) == (Kind.STRING, .1, 0, 0)
-#     assert not list(tokenize('# foo'))
-#     assert not list(tokenize('  # foo'))
-#
-#
+def test_tokenizer_float():
+    assert next(tokenize('.1')) == (Kind.FLOAT, .1, 0, 0)
+
+
 # def test_tokenizer_literal():
 #     assert not list(tokenize(''))
 #     assert not list(tokenize(' '))

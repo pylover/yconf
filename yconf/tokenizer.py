@@ -17,10 +17,17 @@ class Kind(StrEnum):
 
 
 class Token(NamedTuple):
-    type: Kind
+    kind: Kind
     value: str
     line: int
     column: int
+
+    @classmethod
+    def new(cls, kind, value, line, column):
+        if kind == Kind.FLOAT:
+            value = float(value)
+
+        return cls(kind, value, line, column)
 
 
 patterns = [
@@ -29,7 +36,7 @@ patterns = [
     (Kind.DASH, r'-(?=\s|$)'),
     (Kind.COLON, r':'),
     (Kind.KEY, r'[\w.-]+(?=:)'),
-    (Kind.FLOAT, r'\b(\.\d*|\d+\.\d+)\b'),
+    (Kind.FLOAT, r'((?<=\s)|^)\d*.*\d+((?=\s)|$)'),
     (Kind.STRING, r'"[^"]*"|\'[^\']*\'|[^\s].*'),
     (Kind.SKIP,  r'[ \t]+'),
     (Kind.MISMATCH, r'.'),
@@ -47,14 +54,14 @@ def tokenize(code: str) -> Iterable[Token]:
     line_start = 0
 
     # iterate through matches
-    for mo in re.finditer(tok_regex, code):
+    for mo in tok_regex.finditer(code):
         kind = mo.lastgroup
         value = mo.group()
         column = mo.start() - line_start
 
         if kind == Kind.NEWLINE:
             line_start = mo.end()
-            yield Token(kind, value, line_num, column)
+            yield Token.new(kind, value, line_num, column)
             line_num += 1
             continue
 
@@ -70,4 +77,4 @@ def tokenize(code: str) -> Iterable[Token]:
         if kind == Kind.STRING:
             value = value.strip('"\'')
 
-        yield Token(kind, value, line_num, column)
+        yield Token.new(kind, value, line_num, column)
