@@ -3,10 +3,10 @@ class YConfException(Exception):
 
 
 class InvalidTokenError(Exception):
-    def __init__(self, line, lineno, col):
-        self.line = line
+    def __init__(self, data, lineno, col):
+        self.data = data
         self.lineno = lineno
-        super().__init__(f'Invalid token:{lineno}:{col}: {line}')
+        super().__init__(f'Invalid token:{lineno}:{col}: {data}')
 
 
 class IndentationError(Exception):

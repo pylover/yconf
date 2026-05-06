@@ -1,87 +1,66 @@
 import re
-import abc
-import functools
-
-from .errors import InvalidTokenError
+from typing import NamedTuple, Iterable
+from enum import StrEnum, auto
 
 
-cipatt = functools.partial(re.compile, flags=re.I)
+class Kind(StrEnum):
+    STRING = auto()
+    COMMENT = auto()
+    SKIP = auto()
+    MISMATCH = auto()
+    INDENT = auto()
+    NEWLINE = auto()
 
 
-def bool_(value):
-    return value[0] in 'ty'
+class Token(NamedTuple):
+    type: Kind
+    value: str
+    line: int
+    column: int
 
 
-knowntypes = [
-    (float, cipatt(r'^\s*([+-]?[0-9]*\.[0-9]+)\s*$')),
-    (int, cipatt(r'^\s*([+-]?\d+)\s*$')),
-    (bool_, cipatt(r'^\s*(false|true|yes|no)\s*$')),
+patterns = [
+    (Kind.COMMENT, r'#.*'),
+    (Kind.INDENT, r'^ +'),
+    (Kind.STRING, r'"[^"]*"|\'[^\']*\'|.+'),
+    (Kind.SKIP,  r'[ \t]+'),
+    (Kind.MISMATCH, r'.'),
+    (Kind.NEWLINE, r'\n'),
+
+    # ('DIRECTIVE',  r'^%YAML|---|\.\.\.'),      # YAML directives/doc markers
+    # ('DASH',       r'-(?=\s|$)'),              # List markers
+    # ('KEY',        r'[\w.-]+(?=:)'),         # Keys (text followed by colon)
+    # ('COLON',      r':'),                      # The colon separator
+    # ('NUMBER',     r'\b\d+(\.\d*)?\b'),        # Integers or decimals
 ]
 
 
-def parse_literal(value):
-    for typ, pattern in knowntypes:
-        m = pattern.match(value)
-        if not m:
+def tokenize(code: str) -> Iterable[Token]:
+
+    # compile into one master regex
+    pattern = '|'.join(f'(?P<{kind}>{pat})' for kind, pat in patterns)
+    tok_regex = re.compile(pattern, re.MULTILINE | re.IGNORECASE)
+    line_num = 1
+    line_start = 0
+
+    # iterate through matches
+    for mo in re.finditer(tok_regex, code):
+        kind = mo.lastgroup
+        value = mo.group()
+        column = mo.start() - line_start
+
+        if kind == Kind.NEWLINE:
+            line_start = mo.end()
+            yield Token(kind, value, line_num, column)
+            line_num += 1
             continue
 
-        return typ(m.group(1))
-
-    # threat string
-    return value.strip()
-
-
-class Token(abc.ABC):
-    def __init__(self, lineno, indent, value):
-        self.lineno = lineno
-        self.indent = indent
-        self.value = parse_literal(value)
-
-
-class Literal(Token):
-    def __init__(self, lineno, indent, value):
-        super().__init__(lineno, indent, value)
-
-
-class Colon(Token):
-    def __init__(self, lineno, indent, key, value):
-        super().__init__(lineno, indent, value)
-        self.key = key
-
-
-class Dash(Token):
-    def __init__(self, lineno, indent, value):
-        super().__init__(lineno, indent, value)
-
-
-knowntokens = [
-    (Colon, cipatt(r'^([_\w]+):\s*(.*)\s*$')),
-    (Dash, cipatt(r'^-\s*(.*)\s*$')),
-]
-COMMENT = re.compile(r'^\s*#.*$')
-INDPAT = re.compile(r'^(\s*)(.*)\s*$')
-
-
-def tokenize(s):
-    for i, line in enumerate(s.splitlines()):
-        if COMMENT.match(line):
+        if kind == Kind.SKIP or kind == Kind.COMMENT:
             continue
 
-        m = INDPAT.match(line)
-        indent, line = m.groups()
-        indent = len(indent)
+        if kind == Kind.MISMATCH:
+            raise RuntimeError(f'{value!r} unexpected on line {line_num}')
 
-        line = line.strip()
-        if not line:
-            continue
-
-        for typ, pattern in knowntokens:
-            m = pattern.match(line)
-            if m:
-                if typ:
-                    yield typ(i + 1, indent, *m.groups())
-                break
-
-        else:
-            # threat as literal
-            yield Literal(i + 1, indent, line)
+        if kind == Kind.INDENT:
+            value = len(value)
+        yield Token(kind, value, line_num, column)
