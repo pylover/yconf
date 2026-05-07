@@ -1,5 +1,5 @@
 import re
-from typing import NamedTuple, Iterable
+from typing import NamedTuple
 from enum import StrEnum, auto
 
 
@@ -54,19 +54,54 @@ patterns = [
 ]
 
 
-def tokenize(code: str) -> Iterable[Token]:
-    pattern = '|'.join(f'(?P<{kind}>{pat})' for kind, pat in patterns)
-    tok_regex = re.compile(pattern, re.MULTILINE | re.IGNORECASE)
-    line = 0
-    charindex = 0
+class Tokenizer:
+    def __init__(self, blob):
+        pattern = '|'.join(f'(?P<{kind}>{pat})' for kind, pat in patterns)
+        tok_regex = re.compile(pattern, re.MULTILINE | re.IGNORECASE)
+        self._line = 0
+        self._char = 0
+        self._gen = tok_regex.finditer(blob)
+        self._cache = []
 
-    for mo in tok_regex.finditer(code):
-        kind = mo.lastgroup
+    def _pop(self):
+        while True:
+            try:
+                m = next(self._gen)
+            except StopIteration:
+                return None
 
-        if kind == Kind.SKIP or kind == Kind.COMMENT:
-            continue
+            kind = m.lastgroup
 
-        yield Token.new(kind, mo.group(), line, mo.start() - charindex)
-        if kind == Kind.NEWLINE:
-            charindex = mo.end()
-            line += 1
+            if kind == Kind.SKIP or kind == Kind.COMMENT:
+                continue
+
+            tok = Token.new(
+                kind,
+                m.group(),
+                self._line,
+                m.start() - self._char
+            )
+
+            if kind == Kind.NEWLINE:
+                self._char = m.end()
+                self._line += 1
+
+            return tok
+
+    def peek(self):
+        if not self._cache:
+            tok = self._pop()
+            if tok is None:
+                return None
+
+            self._cache.append(tok)
+
+            return tok
+
+        return self._cache[0]
+
+    def pop(self):
+        if self._cache:
+            return self._cache.pop(0)
+
+        return self._pop()
