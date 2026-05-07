@@ -87,3 +87,9 @@ def test_tokenizer_peek():
 
     assert t.peek() is None
     assert t.pop() is None
+
+
+def test_tokenizer_isliteral():
+    t = Tokenizer('foo')
+    tok = t.pop()
+    assert tok.isliteral()

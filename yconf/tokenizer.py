@@ -21,6 +21,21 @@ class Token(NamedTuple):
     line: int
     column: int
 
+    def isliteral(self):
+        return self.kind in (Kind.STRING, Kind.FLOAT, Kind.INT)
+
+    def isindent(self):
+        return self.kind == Kind.INDENT
+
+    def iskey(self):
+        return self.kind == Kind.KEY
+
+    def isdash(self):
+        return self.kind == Kind.DASH
+
+    def isnewline(self):
+        return self.kind == Kind.NEWLINE
+
     @classmethod
     def new(cls, kind, value, line, column):
         if kind == Kind.INDENT:
