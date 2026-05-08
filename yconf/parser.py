@@ -1,6 +1,6 @@
 from .tokenizer import Tokenizer
 from .models import Meld, Chain
-from .errors import InvalidTokenError
+from .errors import InvalidTokenError, ImproperIndentationError
 
 
 class Parser(Tokenizer):
@@ -11,7 +11,12 @@ class Parser(Tokenizer):
         super().__init__(s)
 
     def _tokindent(self, tok):
-        return (tok.value - self._indentoffset)
+        indent = (tok.value - self._indentoffset)
+        if self.peek():
+            if indent < 0 or (self._indentsize and indent % self._indentsize):
+                raise ImproperIndentationError(self.peek())
+
+        return indent
 
     def _isindentout(self, tok):
         return self._tokindent(tok) < self._indent
@@ -36,6 +41,8 @@ class Parser(Tokenizer):
                     self._indent = 0
                 elif self._isindentin(tok):
                     self._indent = self._tokindent(tok)
+                    if self._indentsize is None:
+                        self._indentsize = self._indent
                 elif self._isindentout(tok):
                     return this
 

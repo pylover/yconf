@@ -1,6 +1,7 @@
 import pytest
 
-from yconf import loads, Meld, Chain, InvalidTokenError
+from yconf import loads, Meld, Chain, InvalidTokenError, \
+    ImproperIndentationError
 
 
 """
@@ -20,9 +21,40 @@ guide:
 """
 
 
+def test_parser_indentation_errors():
+    with pytest.raises(ImproperIndentationError) as e:
+        loads('''
+          foo:
+         bar:
+        ''')
+    assert e.exconly() == \
+        'yconf.errors.ImproperIndentationError: Improper indentation:2:9: ' \
+        'key: bar'
+
+    with pytest.raises(ImproperIndentationError) as e:
+        loads('''
+          foo:
+            bar: 1
+           baz: 2
+        ''')
+    assert e.exconly() == \
+        'yconf.errors.ImproperIndentationError: Improper indentation:3:11: ' \
+        'key: baz'
+
+    with pytest.raises(ImproperIndentationError) as e:
+        loads('''
+          foo:
+            bar: 1
+             baz: 2
+        ''')
+    assert e.exconly() == \
+        'yconf.errors.ImproperIndentationError: Improper indentation:3:13: ' \
+        'key: baz'
+
+
 def test_parser_chain_errors():
     with pytest.raises(InvalidTokenError) as e:
-        m = loads('''
+        loads('''
           - foo
           bar: 1
         ''')
@@ -31,7 +63,7 @@ def test_parser_chain_errors():
         'yconf.errors.InvalidTokenError: Invalid token:2:10: key: bar'
 
     with pytest.raises(InvalidTokenError) as e:
-        m = loads('''
+        loads('''
           - foo
           bar
         ''')
@@ -42,7 +74,7 @@ def test_parser_chain_errors():
 
 def test_parser_meld_errors():
     with pytest.raises(InvalidTokenError) as e:
-        m = loads('''
+        loads('''
           foo: 2
           - baz
         ''')
@@ -51,7 +83,7 @@ def test_parser_meld_errors():
         'yconf.errors.InvalidTokenError: Invalid token:2:10: dash: -'
 
     with pytest.raises(InvalidTokenError) as e:
-        m = loads('''
+        loads('''
           foo: bar
           baz
         ''')
@@ -114,13 +146,13 @@ def test_parser_meld():
 
 def test_parser_literal():
     n = loads('')
-    assert n == None
+    assert n is None
 
     n = loads('   ')
-    assert n == None
+    assert n is None
 
     n = loads('\n\n\n')
-    assert n == None
+    assert n is None
 
     n = loads('foo')
     assert n == 'foo'
