@@ -1,5 +1,3 @@
-- Meld() merge
-- error on duplicate tokens
 - dumps
 - dumpfile
 - loadfile

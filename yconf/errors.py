@@ -12,3 +12,8 @@ class InvalidTokenError(YConfException):
 class ImproperIndentationError(YConfException):
     def __init__(self, tok):
         super().__init__(tok, 'Improper indentation')
+
+
+class KeyAlreadyExistsError(YConfException):
+    def __init__(self, tok):
+        super().__init__(tok, 'Key already exists')

@@ -1,7 +1,6 @@
 import pytest
 
-from yconf import loads, Meld, Chain, InvalidTokenError, \
-    ImproperIndentationError
+from yconf import loads, Meld, Chain, errors
 
 
 """
@@ -22,7 +21,7 @@ guide:
 
 
 def test_parser_indentation_errors():
-    with pytest.raises(ImproperIndentationError) as e:
+    with pytest.raises(errors.ImproperIndentationError) as e:
         loads('''
           foo:
          bar:
@@ -31,7 +30,7 @@ def test_parser_indentation_errors():
         'yconf.errors.ImproperIndentationError: Improper indentation:2:9: ' \
         'key: bar'
 
-    with pytest.raises(ImproperIndentationError) as e:
+    with pytest.raises(errors.ImproperIndentationError) as e:
         loads('''
           foo:
             bar: 1
@@ -41,7 +40,7 @@ def test_parser_indentation_errors():
         'yconf.errors.ImproperIndentationError: Improper indentation:3:11: ' \
         'key: baz'
 
-    with pytest.raises(ImproperIndentationError) as e:
+    with pytest.raises(errors.ImproperIndentationError) as e:
         loads('''
           foo:
             bar: 1
@@ -53,7 +52,7 @@ def test_parser_indentation_errors():
 
 
 def test_parser_chain_errors():
-    with pytest.raises(InvalidTokenError) as e:
+    with pytest.raises(errors.InvalidTokenError) as e:
         loads('''
           - foo
           bar: 1
@@ -62,7 +61,7 @@ def test_parser_chain_errors():
     assert e.exconly() == \
         'yconf.errors.InvalidTokenError: Invalid token:2:10: key: bar'
 
-    with pytest.raises(InvalidTokenError) as e:
+    with pytest.raises(errors.InvalidTokenError) as e:
         loads('''
           - foo
           bar
@@ -73,7 +72,7 @@ def test_parser_chain_errors():
 
 
 def test_parser_meld_errors():
-    with pytest.raises(InvalidTokenError) as e:
+    with pytest.raises(errors.InvalidTokenError) as e:
         loads('''
           foo: 2
           - baz
@@ -82,7 +81,7 @@ def test_parser_meld_errors():
     assert e.exconly() == \
         'yconf.errors.InvalidTokenError: Invalid token:2:10: dash: -'
 
-    with pytest.raises(InvalidTokenError) as e:
+    with pytest.raises(errors.InvalidTokenError) as e:
         loads('''
           foo: bar
           baz
@@ -90,6 +89,15 @@ def test_parser_meld_errors():
 
     assert e.exconly() == \
         'yconf.errors.InvalidTokenError: Invalid token:2:10: string: baz'
+
+    with pytest.raises(errors.KeyAlreadyExistsError) as e:
+        loads('''
+          foo: bar
+          foo: baz
+        ''')
+
+    assert e.exconly() == \
+        'yconf.errors.KeyAlreadyExistsError: Key already exists:2:10: key: foo'
 
 
 def test_parser_chain_meld():

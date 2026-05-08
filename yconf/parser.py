@@ -1,8 +1,7 @@
-from .tokenizer import Tokenizer
-from .errors import InvalidTokenError, ImproperIndentationError
+from . import tokenizer, errors
 
 
-class Parser(Tokenizer):
+class Parser(tokenizer.Tokenizer):
     def __init__(self, s):
         from .registry import constructors
 
@@ -16,7 +15,7 @@ class Parser(Tokenizer):
         indent = (tok.value - self._indentoffset)
         if self.peek():
             if indent < 0 or (self._indentsize and indent % self._indentsize):
-                raise ImproperIndentationError(self.peek())
+                raise errors.ImproperIndentationError(self.peek())
 
         return indent
 
@@ -52,7 +51,7 @@ class Parser(Tokenizer):
 
             if tok.isliteral():
                 if this is not None:
-                    raise InvalidTokenError(tok)
+                    raise errors.InvalidTokenError(tok)
 
                 return tok.value
 
@@ -60,7 +59,9 @@ class Parser(Tokenizer):
                 if this is None:
                     this = self._constructors['dict']()
                 elif not isinstance(this, dict):
-                    raise InvalidTokenError(tok)
+                    raise errors.InvalidTokenError(tok)
+                elif tok.value in this:
+                    raise errors.KeyAlreadyExistsError(tok)
 
                 this[tok.value] = self.parse()
 
@@ -68,6 +69,6 @@ class Parser(Tokenizer):
                 if this is None:
                     this = self._constructors['list']()
                 elif not isinstance(this, list):
-                    raise InvalidTokenError(tok)
+                    raise errors.InvalidTokenError(tok)
 
                 this.append(self.parse())
