@@ -1,5 +1,7 @@
+- quoted string
+- indentation error
+- error on duplicate tokens
 - dumps
 - dumpfile
 - loadfile
 - reserved keys
-- quoted string

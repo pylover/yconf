@@ -3,8 +3,6 @@ import pytest
 from yconf import loads, Meld, Chain, InvalidTokenError
 
 
-# TODO: indentation error
-# TODO: error on duplicate tokens
 """
                                Meld    Chain
                                 ^       ^
