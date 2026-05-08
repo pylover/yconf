@@ -1,8 +1,17 @@
+from .parser import Parser
+
+
 class Chain(list):
     pass
 
 
 class Meld(dict):
+    def __init__(self, data=None):
+        if isinstance(data, str):
+            data = Parser(data).parse()
+
+        super().__init__(data or [])
+
     def __getattr__(self, key):
         if key not in self:
             raise AttributeError(key)

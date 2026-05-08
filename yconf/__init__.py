@@ -2,5 +2,15 @@ __version__ = '0.1.0a'
 
 
 from .errors import InvalidTokenError, ImproperIndentationError
-from .parser import loads
+from .parser import Parser
 from .models import Meld, Chain
+
+
+constructors = {
+    'dict': Meld,
+    'list': Chain
+}
+
+
+def loads(s):
+    return Parser(s).parse()

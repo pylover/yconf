@@ -1,5 +1,8 @@
+- Meld() merge
 - error on duplicate tokens
 - dumps
 - dumpfile
 - loadfile
 - reserved keys
+- include other files
+- env

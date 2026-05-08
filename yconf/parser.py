@@ -1,13 +1,15 @@
 from .tokenizer import Tokenizer
-from .models import Meld, Chain
 from .errors import InvalidTokenError, ImproperIndentationError
 
 
 class Parser(Tokenizer):
     def __init__(self, s):
+        from .registry import constructors
+
         self._indentoffset = None
         self._indent = None
         self._indentsize = None
+        self._constructors = constructors
         super().__init__(s)
 
     def _tokindent(self, tok):
@@ -56,20 +58,16 @@ class Parser(Tokenizer):
 
             if tok.iskey():
                 if this is None:
-                    this = Meld()
-                elif not isinstance(this, Meld):
+                    this = self._constructors['dict']()
+                elif not isinstance(this, dict):
                     raise InvalidTokenError(tok)
 
                 this[tok.value] = self.parse()
 
             elif tok.isdash():
                 if this is None:
-                    this = Chain()
-                elif not isinstance(this, Chain):
+                    this = self._constructors['list']()
+                elif not isinstance(this, list):
                     raise InvalidTokenError(tok)
 
                 this.append(self.parse())
-
-
-def loads(s):
-    return Parser(s).parse()
