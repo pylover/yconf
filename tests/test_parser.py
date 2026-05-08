@@ -125,6 +125,12 @@ def test_parser_literal():
     n = loads('foo')
     assert n == 'foo'
 
+    n = loads('"foo"')
+    assert n == 'foo'
+
+    n = loads('\'foo\'')
+    assert n == 'foo'
+
     n = loads('foo\n\n\n')
     assert n == 'foo'
 
