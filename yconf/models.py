@@ -1,4 +1,4 @@
-from .parser import Parser
+from .parser import loads
 
 
 class Chain(list):
@@ -8,7 +8,7 @@ class Chain(list):
 class Meld(dict):
     def __init__(self, data=None):
         if isinstance(data, str):
-            data = Parser(data).parse()
+            data = loads(data)
 
         super().__init__(data or [])
 
@@ -29,6 +29,6 @@ class Meld(dict):
 
     def __ior__(self, other):
         if isinstance(other, str):
-            other = Parser(other).parse()
+            other = loads(other)
 
         return super().__ior__(other)

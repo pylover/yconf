@@ -72,3 +72,15 @@ class Parser(tokenizer.Tokenizer):
                     raise errors.InvalidTokenError(tok)
 
                 this.append(self.parse())
+
+
+def loads(s):
+    return Parser(s).parse()
+
+
+def load(file):
+    if not isinstance(file, str):
+        return loads(file.read())
+
+    with open(file) as f:
+        return loads(f.read())

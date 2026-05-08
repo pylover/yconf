@@ -2,7 +2,7 @@ PYTEST_FLAGS = -vv
 PYDEPS_COMMON += \
 	'coveralls >= 4.1.0' \
 	'pytest >= 7.4.4, < 8' \
-	'pytest-fixkit >= 1.0.3' 
+	'pytest-fixkit >= 2' 
 
 
 # Assert the python-makelib version
