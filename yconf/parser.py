@@ -6,15 +6,18 @@ from .errors import InvalidTokenError
 class Parser(Tokenizer):
     def __init__(self, s):
         self._indentoffset = None
-        self._indent = 0
+        self._indent = None
         self._indentsize = None
         super().__init__(s)
 
+    def _tokindent(self, tok):
+        return (tok.value - self._indentoffset)
+
     def _isindentout(self, tok):
-        return (tok.value - self._indentoffset) < self._indent
+        return self._tokindent(tok) < self._indent
 
     def _isindentin(self, tok):
-        return (tok.value - self._indentoffset) > self._indent
+        return self._tokindent(tok) > self._indent
 
     def parse(self):
         this = None
@@ -30,8 +33,9 @@ class Parser(Tokenizer):
             if tok.isindent():
                 if self._indentoffset is None:
                     self._indentoffset = tok.value
+                    self._indent = 0
                 elif self._isindentin(tok):
-                    self._indent = tok.value - self._indentoffset
+                    self._indent = self._tokindent(tok)
                 elif self._isindentout(tok):
                     return this
 
@@ -50,14 +54,12 @@ class Parser(Tokenizer):
 
             elif tok.isdash():
                 if this is None:
-                    this = Dash()
-                elif not isinstance(this, Dash):
+                    this = Chain()
+                elif not isinstance(this, Chain):
                     raise InvalidTokenError(tok)
 
                 this.append(self.parse())
 
 
 def loads(s):
-    parser = Parser(s)
-    node = parser.parse()
-    return node
+    return Parser(s).parse()
