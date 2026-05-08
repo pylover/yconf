@@ -42,6 +42,9 @@ class Parser(Tokenizer):
                 continue
 
             if tok.isliteral():
+                if this is not None:
+                    raise InvalidTokenError(tok)
+
                 return tok.value
 
             if tok.iskey():

@@ -1,19 +1,65 @@
-from yconf import loads, Meld, Chain
+import pytest
+
+from yconf import loads, Meld, Chain, InvalidTokenError
 
 
 # TODO: indentation error
 # TODO: error on duplicate tokens
 """
-                                          Meld     Chain
-                                           ^        ^
-                                           |        |
-      | newline | indent-in | indent-out | key   | dash  | literal | None
+                               Meld    Chain
+                                ^       ^
+                                |       |
+      | CR | indt+ | indt-   | key   | dash  | value | None
 ------------------------------------------------------------------------------
-New   | NC      | New       | ret None   | > new | > new | ret val | ret None
-Meld  | NC      | New ->    | ret Meld   | > new | Error | Error   | ret None
-Chain | NC      | New ->    | ret Chain  | Error | > new | Error   | ret None
+New   | NC | New   | < None  | > new | > new | < val | < None
+Meld  | NC | New > | < Meld  | > new | Error | Error | < None
+Chain | NC | New > | < Chain | Error | > new | Error | < None
+
+
+guide:
+<       return
+>       recurse
 """
 
+
+def test_parser_chain_errors():
+    with pytest.raises(InvalidTokenError) as e:
+        m = loads('''
+          - foo
+          bar: 1
+        ''')
+
+    assert e.exconly() == \
+        'yconf.errors.InvalidTokenError: Invalid token:2:10: key: bar'
+
+    with pytest.raises(InvalidTokenError) as e:
+        m = loads('''
+          - foo
+          bar
+        ''')
+
+    assert e.exconly() == \
+        'yconf.errors.InvalidTokenError: Invalid token:2:10: string: bar'
+
+
+def test_parser_meld_errors():
+    with pytest.raises(InvalidTokenError) as e:
+        m = loads('''
+          foo: 2
+          - baz
+        ''')
+
+    assert e.exconly() == \
+        'yconf.errors.InvalidTokenError: Invalid token:2:10: dash: -'
+
+    with pytest.raises(InvalidTokenError) as e:
+        m = loads('''
+          foo: bar
+          baz
+        ''')
+
+    assert e.exconly() == \
+        'yconf.errors.InvalidTokenError: Invalid token:2:10: string: baz'
 
 
 def test_parser_chain_meld():

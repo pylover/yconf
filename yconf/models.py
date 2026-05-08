@@ -1,6 +1,5 @@
 class Chain(list):
-    def _eat(self, token):
-        self.append(token.value)
+    pass
 
 
 class Meld(dict):
@@ -11,10 +10,6 @@ class Meld(dict):
         return self[key]
 
     def __setattr__(self, key, value):
-        if isinstance(value, dict):
-            super().__setitem__(key, Meld(value))
-            return
-
         super().__setitem__(key, value)
 
     def __delattr__(self, key):
