@@ -3,8 +3,21 @@ import pytest
 from yconf import Meld
 
 
-# def test_meld_merge():
-#
+def test_meld_merge():
+    m = Meld('foo: bar')
+    m |= '''
+       foo: qux
+       bar: baz
+       baz:
+         a: 1
+         b: 2
+    '''
+
+    assert m.foo == 'qux'
+    assert m.bar == 'baz'
+    assert m.baz.a == 1
+    assert m.baz.b == 2
+    assert isinstance(m.baz, Meld)
 
 
 def test_meld_constructor():

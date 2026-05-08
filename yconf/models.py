@@ -26,3 +26,9 @@ class Meld(dict):
             raise AttributeError(key)
 
         del self[key]
+
+    def __ior__(self, other):
+        if isinstance(other, str):
+            other = Parser(other).parse()
+
+        return super().__ior__(other)
