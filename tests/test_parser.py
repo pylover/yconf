@@ -1,17 +1,17 @@
 import pytest
 
-from yconf import loads, Meld, Chain, errors
+from yconf import loads, Meld, errors
 
 
 """
-                               Meld    Chain
+                               Meld    list
                                 ^       ^
                                 |       |
       | CR | indt+ | indt-   | key   | dash  | value | None   | tag
 ------------------------------------------------------------------------------
 New   | NC | New   | < None  | > new | > new | < val | < None |
 Meld  | NC | New > | < Meld  | > new | Error | Error | < None |
-Chain | NC | New > | < Chain | Error | > new | Error | < None |
+list  | NC | New > | < list  | Error | > new | Error | < None |
 
 
 guide:
@@ -113,7 +113,7 @@ def test_parser_chain_meld():
         qux: 4
     ''')
 
-    assert isinstance(m, Chain)
+    assert isinstance(m, list)
     assert m[0] == 'foo'
     assert m[1].bar == 2
     assert m[1].baz == 3
@@ -126,7 +126,7 @@ def test_parser_chain():
       - .73
     ''')
 
-    assert isinstance(m, Chain)
+    assert isinstance(m, list)
     assert m[0] == 'foo'
     assert m[1] == .73
 
