@@ -1,4 +1,3 @@
-- dumpfile
 - reserved keys
 - mention filename in errors if any
 - bool

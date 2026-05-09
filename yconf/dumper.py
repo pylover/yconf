@@ -1,35 +1,27 @@
+import io
 
 
-def _list(lst, indent, indentsize):
-    for v in lst:
-        if isinstance(v, (dict, list)):
-            yield f'{" " * indent}-'
-            yield from _dump(v, indent + indentsize, indentsize)
-        else:
-            yield f'{" " * indent}- {v}'
-
-
-def _dict(d, indent, indentsize):
-    for k, v in d.items():
-        if isinstance(v, (dict, list)):
-            yield f'{" " * indent}{k}:'
-            yield from _dump(v, indent + indentsize, indentsize)
-        else:
-            yield f'{" " * indent}{k}: {v}'
-
-
-def _dump(obj, indent, indentsize):
+def dump(obj, file, indent=0, indentsize=2):
     if isinstance(obj, list):
-        yield from _list(obj, indent, indentsize)
+        for v in obj:
+            if isinstance(v, (dict, list)):
+                file.write(f'{" " * indent}-\n')
+                dump(v, file, indent + indentsize, indentsize)
+            else:
+                file.write(f'{" " * indent}- {v}\n')
 
-    if isinstance(obj, dict):
-        yield from _dict(obj, indent, indentsize)
-
-    return str(obj)
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(v, (dict, list)):
+                file.write(f'{" " * indent}{k}:\n')
+                dump(v, file, indent + indentsize, indentsize)
+            else:
+                file.write(f'{" " * indent}{k}: {v}\n')
+    else:
+        file.write(f'{obj}\n')
 
 
 def dumps(obj, indent=0, indentsize=2):
-    out = list(_dump(obj, indent, indentsize))
-    if out:
-        out.append('')
-    return '\n'.join(out)
+    with io.StringIO() as file:
+        dump(obj, file, indent, indentsize)
+        return file.getvalue()

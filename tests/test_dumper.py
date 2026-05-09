@@ -1,7 +1,19 @@
 import os
 from collections import OrderedDict
 
-from yconf import dumps, loads
+from yconf import dump, dumps, loads
+
+
+def test_dump(tmpdir):
+    yml = '''\
+      foo: !env: USER
+    '''
+    filename = os.path.join(tmpdir, 'foo.yml')
+    with open(filename, 'w') as f:
+        dump(loads(yml), f)
+
+    with open(filename) as f:
+        assert f.read() == f'foo: {os.environ["USER"]}\n'
 
 
 def test_dumps_tags():
@@ -54,3 +66,8 @@ def test_dumps_meld():
         'qux: 0.73',
         ''
     ])
+
+
+def test_dumps_literal():
+    out = dumps('foo')
+    assert out == 'foo\n'
