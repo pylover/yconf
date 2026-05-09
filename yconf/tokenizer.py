@@ -13,6 +13,7 @@ class Kind(StrEnum):
     STRING = auto()
     FLOAT = auto()
     INT = auto()
+    BOOL = auto()
     TAG = auto()
 
 
@@ -24,6 +25,7 @@ patterns = [
     (Kind.KEY, r'[\w-]+:'),
     (Kind.FLOAT, r'((?<=\s)|^)-?\d*\.\d+((?=\s)|$)'),
     (Kind.INT, r'((?<=\s)|^)-?\d+((?=\s)|$)'),
+    (Kind.BOOL, r'((?<=\s)|^)(false|true|no|yes)((?=\s)|$)'),
     (Kind.SKIP, r'[ \t]+'),
     (Kind.NEWLINE, r'\n'),
     (Kind.STRING, r'"[^"]*"|\'[^\']*\'|[^\s].*'),
@@ -37,7 +39,7 @@ class Token(NamedTuple):
     column: int
 
     def isliteral(self):
-        return self.kind in (Kind.STRING, Kind.FLOAT, Kind.INT)
+        return self.kind in (Kind.STRING, Kind.FLOAT, Kind.INT, Kind.BOOL)
 
     def isindent(self):
         return self.kind == Kind.INDENT
@@ -67,6 +69,9 @@ class Token(NamedTuple):
 
         if kind == Kind.INT:
             value = int(value)
+
+        if kind == Kind.BOOL:
+            value = value.lower() in ('true', 'yes')
 
         if kind == Kind.KEY:
             value = value[:-1]

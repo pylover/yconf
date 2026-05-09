@@ -58,12 +58,13 @@ def test_dumps_meld():
 
     assert yml == dumps(loads(yml), indent=6)
 
-    d = OrderedDict(foo='bar', baz=3, qux=.73)
+    d = OrderedDict(foo='bar', baz=3, qux=.73, quux=True)
     out = dumps(d)
     assert out == '\n'.join([
         'foo: bar',
         'baz: 3',
         'qux: 0.73',
+        'quux: True',
         ''
     ])
 

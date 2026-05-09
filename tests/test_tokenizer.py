@@ -80,6 +80,14 @@ def test_tokenizer_int():
     assert Tokenizer('-73').pop() == (Kind.INT, -73, 0, 0)
 
 
+def test_tokenizer_bool():
+    assert Tokenizer('false').pop() == (Kind.BOOL, False, 0, 0)
+    assert Tokenizer('False').pop() == (Kind.BOOL, False, 0, 0)
+    assert Tokenizer('no').pop() == (Kind.BOOL, False, 0, 0)
+    assert Tokenizer('true').pop() == (Kind.BOOL, True, 0, 0)
+    assert Tokenizer('yes').pop() == (Kind.BOOL, True, 0, 0)
+
+
 def test_tokenizer_exceptions():
     t = Tokenizer('''\
       foo::::
