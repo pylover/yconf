@@ -7,17 +7,26 @@ from yconf import loads, Meld, Chain, errors
                                Meld    Chain
                                 ^       ^
                                 |       |
-      | CR | indt+ | indt-   | key   | dash  | value | None
+      | CR | indt+ | indt-   | key   | dash  | value | None   | tag
 ------------------------------------------------------------------------------
-New   | NC | New   | < None  | > new | > new | < val | < None
-Meld  | NC | New > | < Meld  | > new | Error | Error | < None
-Chain | NC | New > | < Chain | Error | > new | Error | < None
+New   | NC | New   | < None  | > new | > new | < val | < None |
+Meld  | NC | New > | < Meld  | > new | Error | Error | < None |
+Chain | NC | New > | < Chain | Error | > new | Error | < None |
 
 
 guide:
 <       return
 >       recurse
 """
+
+
+def test_parser_unknowntag():
+    with pytest.raises(errors.UnknownTagError) as e:
+        loads('!foobar:')
+
+    assert e.exconly() == \
+        'yconf.errors.UnknownTagError: (stream):0:0: Unknown tag: ' \
+        'foobar: tag `foobar`'
 
 
 def test_parser_indentation_errors():
@@ -27,8 +36,8 @@ def test_parser_indentation_errors():
          bar:
         ''')
     assert e.exconly() == \
-        'yconf.errors.ImproperIndentationError: Improper indentation:2:9: ' \
-        'key: bar'
+        'yconf.errors.ImproperIndentationError: (stream):2:9: ' \
+        'Improper indentation: key `bar`'
 
     with pytest.raises(errors.ImproperIndentationError) as e:
         loads('''
@@ -37,8 +46,8 @@ def test_parser_indentation_errors():
            baz: 2
         ''')
     assert e.exconly() == \
-        'yconf.errors.ImproperIndentationError: Improper indentation:3:11: ' \
-        'key: baz'
+        'yconf.errors.ImproperIndentationError: (stream):3:11: ' \
+        'Improper indentation: key `baz`'
 
     with pytest.raises(errors.ImproperIndentationError) as e:
         loads('''
@@ -47,8 +56,8 @@ def test_parser_indentation_errors():
              baz: 2
         ''')
     assert e.exconly() == \
-        'yconf.errors.ImproperIndentationError: Improper indentation:3:13: ' \
-        'key: baz'
+        'yconf.errors.ImproperIndentationError: (stream):3:13: ' \
+        'Improper indentation: key `baz`'
 
 
 def test_parser_chain_errors():
@@ -59,7 +68,8 @@ def test_parser_chain_errors():
         ''')
 
     assert e.exconly() == \
-        'yconf.errors.InvalidTokenError: Invalid token:2:10: key: bar'
+        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
+        'key `bar`'
 
     with pytest.raises(errors.InvalidTokenError) as e:
         loads('''
@@ -68,7 +78,8 @@ def test_parser_chain_errors():
         ''')
 
     assert e.exconly() == \
-        'yconf.errors.InvalidTokenError: Invalid token:2:10: string: bar'
+        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
+        'string `bar`'
 
 
 def test_parser_meld_errors():
@@ -79,7 +90,8 @@ def test_parser_meld_errors():
         ''')
 
     assert e.exconly() == \
-        'yconf.errors.InvalidTokenError: Invalid token:2:10: dash: -'
+        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
+        'dash `-`'
 
     with pytest.raises(errors.InvalidTokenError) as e:
         loads('''
@@ -88,16 +100,8 @@ def test_parser_meld_errors():
         ''')
 
     assert e.exconly() == \
-        'yconf.errors.InvalidTokenError: Invalid token:2:10: string: baz'
-
-    with pytest.raises(errors.KeyAlreadyExistsError) as e:
-        loads('''
-          foo: bar
-          foo: baz
-        ''')
-
-    assert e.exconly() == \
-        'yconf.errors.KeyAlreadyExistsError: Key already exists:2:10: key: foo'
+        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
+        'string `baz`'
 
 
 def test_parser_chain_meld():

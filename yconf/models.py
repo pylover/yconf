@@ -1,3 +1,5 @@
+import copy
+
 from .parser import loads
 
 
@@ -27,8 +29,23 @@ class Meld(dict):
 
         del self[key]
 
-    def __ior__(self, other):
-        if isinstance(other, str):
-            other = loads(other)
+    def __ior__(self, data):
+        if isinstance(data, str):
+            data = loads(data)
+        elif not isinstance(data, dict):
+            raise TypeError(
+                'Only dict and or it\'s subclasses are allowed, '
+                f'given: {type(data)}')
+        else:
+            data = copy.deepcopy(data)
 
-        return super().__ior__(other)
+        for k, other in data.items():
+            mine = self.get(k)
+
+            if isinstance(mine, Meld):
+                mine |= other
+
+            else:
+                self[k] = other
+
+        return self

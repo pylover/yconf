@@ -13,6 +13,21 @@ class Kind(StrEnum):
     STRING = auto()
     FLOAT = auto()
     INT = auto()
+    TAG = auto()
+
+
+patterns = [
+    (Kind.COMMENT, r'#.*'),
+    (Kind.INDENT, r'^ +'),
+    (Kind.TAG, r'![\w-]+:'),
+    (Kind.DASH, r'-(?=\s|$)'),
+    (Kind.KEY, r'[\w-]+:'),
+    (Kind.FLOAT, r'((?<=\s)|^)-?\d*\.\d+((?=\s)|$)'),
+    (Kind.INT, r'((?<=\s)|^)-?\d+((?=\s)|$)'),
+    (Kind.SKIP, r'[ \t]+'),
+    (Kind.NEWLINE, r'\n'),
+    (Kind.STRING, r'"[^"]*"|\'[^\']*\'|[^\s].*'),
+]
 
 
 class Token(NamedTuple):
@@ -36,6 +51,9 @@ class Token(NamedTuple):
     def isnewline(self):
         return self.kind == Kind.NEWLINE
 
+    def istag(self):
+        return self.kind == Kind.TAG
+
     @classmethod
     def new(cls, kind, value, line, column):
         if kind == Kind.INDENT:
@@ -53,20 +71,10 @@ class Token(NamedTuple):
         if kind == Kind.KEY:
             value = value[:-1]
 
+        if kind == Kind.TAG:
+            value = value[1:-1]
+
         return cls(kind, value, line, column)
-
-
-patterns = [
-    (Kind.COMMENT, r'#.*'),
-    (Kind.INDENT, r'^ +'),
-    (Kind.DASH, r'-(?=\s|$)'),
-    (Kind.KEY, r'[\w.-]+:'),
-    (Kind.FLOAT, r'((?<=\s)|^)-?\d*\.\d+((?=\s)|$)'),
-    (Kind.INT, r'((?<=\s)|^)-?\d+((?=\s)|$)'),
-    (Kind.SKIP, r'[ \t]+'),
-    (Kind.NEWLINE, r'\n'),
-    (Kind.STRING, r'"[^"]*"|\'[^\']*\'|[^\s].*'),
-]
 
 
 class Tokenizer:

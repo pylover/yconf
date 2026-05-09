@@ -1,7 +1,9 @@
 class YConfException(Exception):
     def __init__(self, tok, title):
         super().__init__(
-            f'{title}:{tok.line}:{tok.column}: {tok.kind}: {tok.value}')
+            f'(stream):{tok.line}:{tok.column}: {title}: {tok.kind} '
+            f'`{tok.value}`'
+        )
 
 
 class InvalidTokenError(YConfException):
@@ -14,6 +16,11 @@ class ImproperIndentationError(YConfException):
         super().__init__(tok, 'Improper indentation')
 
 
-class KeyAlreadyExistsError(YConfException):
+class ExpectedTokenError(YConfException):
+    def __init__(self, tok, expected):
+        super().__init__(tok, f'Expected {expected}')
+
+
+class UnknownTagError(YConfException):
     def __init__(self, tok):
-        super().__init__(tok, 'Key already exists')
+        super().__init__(tok, f'Unknown tag: {tok.value}')

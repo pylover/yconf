@@ -25,6 +25,28 @@ class Parser(tokenizer.Tokenizer):
     def _isindentin(self, tok):
         return self._tokindent(tok) > self._indent
 
+    def _include(self, this, tok):
+        m = load(tok.value)
+        if this is None:
+            return m
+
+        if isinstance(this, dict):
+            this |= m
+
+        elif isinstance(this, list):
+            this.extend(m)
+
+        return this
+
+    def _tag(self, this, tok):
+        if tok.value == 'include':
+            if self.peek() is None:
+                raise errors.ExpectedTokenError(tok, 'filename')
+
+            return self._include(this, self.pop())
+
+        raise errors.UnknownTagError(tok)
+
     def parse(self):
         this = None
         while True:
@@ -60,8 +82,6 @@ class Parser(tokenizer.Tokenizer):
                     this = self._constructors['dict']()
                 elif not isinstance(this, dict):
                     raise errors.InvalidTokenError(tok)
-                elif tok.value in this:
-                    raise errors.KeyAlreadyExistsError(tok)
 
                 this[tok.value] = self.parse()
 
@@ -72,6 +92,9 @@ class Parser(tokenizer.Tokenizer):
                     raise errors.InvalidTokenError(tok)
 
                 this.append(self.parse())
+
+            elif tok.istag():
+                this = self._tag(this, tok)
 
 
 def loads(s):

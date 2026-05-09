@@ -4,20 +4,29 @@ from yconf import Meld
 
 
 def test_meld_merge():
-    m = Meld('foo: bar')
+    m = Meld('''
+      foo: bar
+      bar:
+        qux: 73
+    ''')
+
     m |= '''
-       foo: qux
-       bar: baz
-       baz:
-         a: 1
-         b: 2
+       foo: BAR
+       bar:
+         baz:
+           a: 1
+           b: 2
     '''
 
-    assert m.foo == 'qux'
-    assert m.bar == 'baz'
-    assert m.baz.a == 1
-    assert m.baz.b == 2
-    assert isinstance(m.baz, Meld)
+    assert m.foo == 'BAR'
+    assert m.bar.qux == 73
+    assert m.bar.baz.a == 1
+    assert m.bar.baz.b == 2
+    assert isinstance(m.bar, Meld)
+    assert isinstance(m.bar.baz, Meld)
+
+    with pytest.raises(TypeError):
+        m |= 73
 
 
 def test_meld_constructor():
