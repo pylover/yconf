@@ -1,4 +1,6 @@
-from yconf import load
+import pytest
+
+from yconf import load, errors
 
 
 def test_load(mktmpfile, fileio):
@@ -20,3 +22,11 @@ def test_load(mktmpfile, fileio):
     ''')
     m = load(file)
     assert m.foo == ['bar', 'baz']
+
+    file = mktmpfile(content='!foobar:')
+    with pytest.raises(errors.UnknownTagError) as e:
+        load(file)
+
+    assert e.exconly() == \
+        f'yconf.errors.UnknownTagError: {file}:0:0: Unknown tag: ' \
+        'foobar: tag `foobar`'

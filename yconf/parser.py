@@ -52,17 +52,20 @@ class Meld(dict):
 
 
 class Parser(tokenizer.Tokenizer):
-    def __init__(self, s):
+    def __init__(self, s, filename=None):
         self._indentoffset = None
         self._indent = None
         self._indentsize = None
+        self._filename = filename
         super().__init__(s)
 
     def _tokindent(self, tok):
         indent = (tok.value - self._indentoffset)
         if self.peek():
             if indent < 0 or (self._indentsize and indent % self._indentsize):
-                raise errors.ImproperIndentationError(self.peek())
+                raise errors.ImproperIndentationError(
+                    self.peek(), self._filename
+                )
 
         return indent
 
@@ -102,23 +105,29 @@ class Parser(tokenizer.Tokenizer):
     def _tag(self, this, tok):
         if tok.value == 'include':
             if self.peek() is None:
-                raise errors.ExpectedTokenError(tok, 'filename')
+                raise errors.ExpectedTokenError(
+                    tok, 'filename', self._filename
+                )
 
             return self._include(this, self.pop())
 
         if tok.value == 'env':
             if self.peek() is None:
-                raise errors.ExpectedTokenError(tok, 'environment variable')
+                raise errors.ExpectedTokenError(
+                    tok, 'environment variable', self._filename
+                )
 
             return self._environ(this, self.pop())
 
         if tok.value == 'shell':
             if self.peek() is None:
-                raise errors.ExpectedTokenError(tok, 'shell command')
+                raise errors.ExpectedTokenError(
+                    tok, 'shell command', self._filename
+                )
 
             return self._shell(this, self.pop())
 
-        raise errors.UnknownTagError(tok)
+        raise errors.UnknownTagError(tok, self._filename)
 
     def parse(self):
         this = None
@@ -146,7 +155,7 @@ class Parser(tokenizer.Tokenizer):
 
             if tok.isliteral():
                 if this is not None:
-                    raise errors.InvalidTokenError(tok)
+                    raise errors.InvalidTokenError(tok, self._filename)
 
                 return tok.value
 
@@ -154,7 +163,7 @@ class Parser(tokenizer.Tokenizer):
                 if this is None:
                     this = Meld()
                 elif not isinstance(this, dict):
-                    raise errors.InvalidTokenError(tok)
+                    raise errors.InvalidTokenError(tok, self._filename)
 
                 this[tok.value] = self.parse()
 
@@ -162,7 +171,7 @@ class Parser(tokenizer.Tokenizer):
                 if this is None:
                     this = list()
                 elif not isinstance(this, list):
-                    raise errors.InvalidTokenError(tok)
+                    raise errors.InvalidTokenError(tok, self._filename)
 
                 this.append(self.parse())
 
@@ -170,8 +179,8 @@ class Parser(tokenizer.Tokenizer):
                 this = self._tag(this, tok)
 
 
-def loads(s):
-    return Parser(s).parse()
+def loads(s, filename=None):
+    return Parser(s, filename).parse()
 
 
 def load(file):
@@ -179,4 +188,4 @@ def load(file):
         return loads(file.read())
 
     with open(file) as f:
-        return loads(f.read())
+        return loads(f.read(), file)
