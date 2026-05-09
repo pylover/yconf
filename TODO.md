@@ -1,5 +1,3 @@
-- env variable
-- shell execution
 - dumps
 - dumpfile
 - reserved keys

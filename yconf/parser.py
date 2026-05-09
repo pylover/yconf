@@ -1,5 +1,6 @@
 import os
 import copy
+import subprocess
 
 from . import tokenizer, errors
 
@@ -12,7 +13,6 @@ class Meld(dict):
 
         else:
             super().__init__(data or [])
-
 
     def __getattr__(self, key):
         if key not in self:
@@ -88,6 +88,17 @@ class Parser(tokenizer.Tokenizer):
     def _environ(self, this, tok):
         return os.environ.get(tok.value)
 
+    def _shell(self, this, tok):
+        result = subprocess.run(
+            tok.value,
+            shell=True,
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+
+        return result.stdout.strip()
+
     def _tag(self, this, tok):
         if tok.value == 'include':
             if self.peek() is None:
@@ -100,6 +111,12 @@ class Parser(tokenizer.Tokenizer):
                 raise errors.ExpectedTokenError(tok, 'environment variable')
 
             return self._environ(this, self.pop())
+
+        if tok.value == 'shell':
+            if self.peek() is None:
+                raise errors.ExpectedTokenError(tok, 'shell command')
+
+            return self._shell(this, self.pop())
 
         raise errors.UnknownTagError(tok)
 
