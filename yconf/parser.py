@@ -1,3 +1,5 @@
+import os
+
 from . import tokenizer, errors
 
 
@@ -38,12 +40,21 @@ class Parser(tokenizer.Tokenizer):
 
         return this
 
+    def _environ(self, this, tok):
+        return os.environ.get(tok.value)
+
     def _tag(self, this, tok):
         if tok.value == 'include':
             if self.peek() is None:
                 raise errors.ExpectedTokenError(tok, 'filename')
 
             return self._include(this, self.pop())
+
+        if tok.value == 'env':
+            if self.peek() is None:
+                raise errors.ExpectedTokenError(tok, 'environment variable')
+
+            return self._environ(this, self.pop())
 
         raise errors.UnknownTagError(tok)
 
