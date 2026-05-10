@@ -20,7 +20,7 @@ class Kind(StrEnum):
 patterns = [
     (Kind.COMMENT, r'#.*'),
     (Kind.INDENT, r'^ +'),
-    (Kind.TAG, r'![\w-]+:'),
+    (Kind.TAG, r'![\w-]+'),
     (Kind.DASH, r'-(?=\s|$)'),
     (Kind.KEY, r'[\w-]+:'),
     (Kind.FLOAT, r'((?<=\s)|^)-?\d*\.\d+((?=\s)|$)'),
@@ -77,7 +77,7 @@ class Token(NamedTuple):
             value = value[:-1]
 
         if kind == Kind.TAG:
-            value = value[1:-1]
+            value = value[1:]
 
         return cls(kind, value, line, column)
 

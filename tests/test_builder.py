@@ -6,7 +6,7 @@ from yconf import dump, dumps, loads
 
 def test_dump(tmpdir):
     yml = '''\
-      foo: !env: USER
+      foo: !env USER
     '''
     filename = os.path.join(tmpdir, 'foo.yml')
     with open(filename, 'w') as f:
@@ -18,7 +18,7 @@ def test_dump(tmpdir):
 
 def test_dumps_tags():
     yml = '''\
-      foo: !env: USER
+      foo: !env USER
     '''
     assert dumps(loads(yml), indent=6) == f'''\
       foo: {os.environ['USER']}\n'''

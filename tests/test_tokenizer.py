@@ -2,17 +2,17 @@ from yconf.tokenizer import Tokenizer, Kind
 
 
 def test_tokenizer_include():
-    t = Tokenizer('!include: foo')
+    t = Tokenizer('!include foo')
     assert t.pop() == (Kind.TAG, 'include', 0, 0)
-    assert t.pop() == (Kind.STRING, 'foo', 0, 10)
+    assert t.pop() == (Kind.STRING, 'foo', 0, 9)
 
     t = Tokenizer('''
-      !include: foo
+      !include foo
     ''')
     t.pop()
     t.pop()
     assert t.pop() == (Kind.TAG, 'include', 1, 6)
-    assert t.pop() == (Kind.STRING, 'foo', 1, 16)
+    assert t.pop() == (Kind.STRING, 'foo', 1, 15)
 
 
 def test_tokenizer_newline_indent_comment():

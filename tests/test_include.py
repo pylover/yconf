@@ -5,7 +5,7 @@ from yconf import loads, errors
 
 def test_include_error(mktmpfile):
     with pytest.raises(errors.ExpectedTokenError) as e:
-        loads('!include:')
+        loads('!include')
 
     assert e.exconly() == \
         'yconf.errors.ExpectedTokenError: (stream):0:0: Expected filename: ' \
@@ -15,10 +15,10 @@ def test_include_error(mktmpfile):
 def test_include_literal(mktmpfile):
     qux = mktmpfile(name='qux.yml', content='FOO')
 
-    m = loads(f'foo: !include: {qux}')
+    m = loads(f'foo: !include {qux}')
     assert m.foo == 'FOO'
 
-    m = loads(f'- !include: {qux}')
+    m = loads(f'- !include {qux}')
     assert m[0] == 'FOO'
 
 
@@ -30,7 +30,7 @@ def test_include_chain(mktmpfile):
 
     m = loads(f'''
       - baz
-      !include: {qux}
+      !include {qux}
     ''')
 
     assert m == ['baz', 'foo', 'bar']
@@ -41,7 +41,7 @@ def test_include_emptymeld(mktmpfile):
       foo: BAR
     ''')
 
-    m = loads(f'!include: {qux}')
+    m = loads(f'!include {qux}')
 
     assert m.foo == 'BAR'
 
@@ -66,12 +66,12 @@ def test_include_meld(mktmpfile):
 
     m = loads(f'''
       foo: bar
-      baz: !include: {corge}
+      baz: !include {corge}
         b: 2
         c: 3
-        !include: {thud}
+        !include {thud}
 
-      !include: {qux}
+      !include {qux}
     ''')
 
     assert m.foo == 'BAR'
