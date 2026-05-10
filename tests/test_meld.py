@@ -63,6 +63,9 @@ def test_meld_merge():
     with pytest.raises(TypeError):
         m |= 73
 
+    m = Meld('bar: baz', root='foo')
+    assert m.foo.bar == 'baz'
+
 
 def test_meld_constructor():
     m = Meld('foo: bar')

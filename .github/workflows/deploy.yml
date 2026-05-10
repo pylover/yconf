@@ -34,7 +34,7 @@ jobs:
 
   deploypypi:
     name: Deploy to PyPI
-    needs: deploydoc
+      # needs: deploydoc
     runs-on: ubuntu-latest
     env:
       PREFIX: /usr 

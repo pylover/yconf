@@ -7,13 +7,17 @@ from . import tokenizer, errors
 
 
 class Meld(dict):
-    def __init__(self, data=None):
+    def __init__(self, data=None, root=None):
         if isinstance(data, str):
-            super().__init__()
-            self |= data
+            data = loads(data)
+        elif not isinstance(data, Meld):
+            data = data or {}
 
+        if root:
+            super().__init__()
+            self[root] = data
         else:
-            super().__init__(data or [])
+            super().__init__(data)
 
     def __getattr__(self, key):
         if key not in self:
