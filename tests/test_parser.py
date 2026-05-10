@@ -9,9 +9,9 @@ from yconf import loads, Meld, errors
                                 |       |
       | CR | indt+ | indt-   | key   | dash  | value | None   | tag
 ------------------------------------------------------------------------------
-New   | NC | New   | < None  | > new | > new | < val | < None |
-Meld  | NC | New > | < Meld  | > new | Error | Error | < None |
-list  | NC | New > | < list  | Error | > new | Error | < None |
+New   | NC | New   | < None  | > new | > new | < val | < None | Meld/list
+Meld  | NC | New > | < Meld  | > new | Error | Error | < None | Meld
+list  | NC | New > | < list  | Error | > new | Error | < None | list
 
 
 guide:
