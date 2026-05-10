@@ -47,7 +47,7 @@ class Meld(dict):
         for k, other in data.items():
             mine = self.get(k)
 
-            if isinstance(mine, Meld):
+            if isinstance(mine, Meld) and isinstance(other, dict):
                 mine |= other
 
             else:
@@ -67,26 +67,18 @@ class Meld(dict):
 class Parser(tokenizer.Tokenizer):
     def __init__(self, s, filename=None):
         self._indentoffset = None
-        self._indent = None
         self._indentsize = None
         self._filename = filename
         super().__init__(s)
 
     def _tokindent(self, tok):
-        indent = (tok.value - self._indentoffset)
-        if self.peek():
-            if indent < 0 or (self._indentsize and indent % self._indentsize):
-                raise errors.ImproperIndentationError(
-                    self.peek(), self._filename
-                )
+        return tok.value - self._indentoffset
 
-        return indent
+    def _isindentout(self, tok, indent):
+        return self._tokindent(tok) < indent
 
-    def _isindentout(self, tok):
-        return self._tokindent(tok) < self._indent
-
-    def _isindentin(self, tok):
-        return self._tokindent(tok) > self._indent
+    def _isindentin(self, tok, indent):
+        return self._tokindent(tok) > indent
 
     def _include(self, this, tok):
         m = load(tok.value)
@@ -142,28 +134,46 @@ class Parser(tokenizer.Tokenizer):
 
         raise errors.UnknownTagError(tok, self._filename)
 
-    def parse(self):
+    def parse(self, indent=0):
         this = None
         while True:
-            tok = self.pop()
+            if (nxtok := self.peek()) is None:
+                return this
 
-            if tok is None:
+            if nxtok.isindent():
+                if self._indentoffset is None:
+                    if indent == 0:
+                        self._indentoffset = nxtok.value
+                    else:
+                        self._indentoffset = 0
+
+                if self._isindentin(nxtok, indent):
+                    if self._indentsize is None:
+                        indent = self._indentsize = self._tokindent(nxtok)
+
+                elif self._isindentout(nxtok, indent):
+                    if indent == 0:
+                        self.pop()
+                        if self.peek():
+                            raise errors.ImproperIndentationError(
+                                self.peek(), self._filename
+                            )
+                    return this
+
+                self.pop()
+                if self.peek():
+                    if indent < 0 or (
+                        self._indentsize
+                        and self._tokindent(nxtok) % self._indentsize
+                    ):
+                        raise errors.ImproperIndentationError(
+                            self.peek(), self._filename
+                        )
+
+            if (tok := self.pop()) is None:
                 return this
 
             if tok.isnewline():
-                continue
-
-            if tok.isindent():
-                if self._indentoffset is None:
-                    self._indentoffset = tok.value
-                    self._indent = 0
-                elif self._isindentin(tok):
-                    self._indent = self._tokindent(tok)
-                    if self._indentsize is None:
-                        self._indentsize = self._indent
-                elif self._isindentout(tok):
-                    return this
-
                 continue
 
             if tok.isliteral():
@@ -178,7 +188,7 @@ class Parser(tokenizer.Tokenizer):
                 elif not isinstance(this, dict):
                     raise errors.InvalidTokenError(tok, self._filename)
 
-                this[tok.value] = self.parse()
+                this[tok.value] = self.parse(indent + (self._indentsize or 1))
 
             elif tok.isdash():
                 if this is None:
@@ -186,7 +196,7 @@ class Parser(tokenizer.Tokenizer):
                 elif not isinstance(this, list):
                     raise errors.InvalidTokenError(tok, self._filename)
 
-                this.append(self.parse())
+                this.append(self.parse(indent + (self._indentsize or 1)))
 
             elif tok.istag():
                 this = self._tag(this, tok)

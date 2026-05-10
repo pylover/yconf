@@ -88,14 +88,18 @@ def test_tokenizer_bool():
     assert Tokenizer('yes').pop() == (Kind.BOOL, True, 0, 0)
 
 
-def test_tokenizer_exceptions():
+def test_tokenizer_key():
+    t = Tokenizer('bar: postgres://:@/foo')
+    assert t.pop() == (Kind.KEY, 'bar', 0, 0)
+    assert t.pop() == (Kind.STRING, 'postgres://:@/foo', 0, 5)
+
     t = Tokenizer('''\
-      foo::::
+      foo: :::
     ''')
 
     assert t.pop() == (Kind.INDENT, 6, 0, 0)
     assert t.pop() == (Kind.KEY, 'foo', 0, 6)
-    assert t.pop() == (Kind.STRING, ':::', 0, 10)
+    assert t.pop() == (Kind.STRING, ':::', 0, 11)
 
 
 def test_tokenizer_peek():

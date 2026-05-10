@@ -20,6 +20,54 @@ guide:
 """
 
 
+def test_parser_indentation():
+    #     m = Meld()
+    #     m |= '''
+    # toc:
+    # metadata:
+    #   foo: bar
+    # '''
+    #     assert m.metadata.foo == 'bar'
+
+    m = loads('\n'.join([
+        'foo:',
+        '  bar: baz',
+        'qux: thud',
+    ]))
+    assert m.foo.bar == 'baz'
+    assert m.qux == thud
+
+    m = loads('''
+      foo:
+        bar:
+      baz:
+        qux: false
+    ''')
+    assert m.baz.qux is False
+
+    m = loads('''
+      foo:
+       a: 1
+    ''')
+    assert m.foo.a == 1
+
+    m = loads('''
+      foo:
+            a: 1
+    ''')
+    assert m.foo.a == 1
+
+
+def test_parser_emptytag():
+    m = loads('''
+      foo:
+      bar: baz
+    ''')
+
+    assert m.foo is None
+    assert m.bar == 'baz'
+
+
 def test_parser_unknowntag():
     with pytest.raises(errors.UnknownTagError) as e:
         loads('!foobar:')
@@ -33,21 +81,21 @@ def test_parser_indentation_errors():
     with pytest.raises(errors.ImproperIndentationError) as e:
         loads('''
           foo:
-         bar:
-        ''')
-    assert e.exconly() == \
-        'yconf.errors.ImproperIndentationError: (stream):2:9: ' \
-        'Improper indentation: key `bar`'
-
-    with pytest.raises(errors.ImproperIndentationError) as e:
-        loads('''
-          foo:
             bar: 1
            baz: 2
         ''')
     assert e.exconly() == \
         'yconf.errors.ImproperIndentationError: (stream):3:11: ' \
         'Improper indentation: key `baz`'
+
+    with pytest.raises(errors.ImproperIndentationError) as e:
+        loads('''
+          foo:
+         bar:
+        ''')
+    assert e.exconly() == \
+        'yconf.errors.ImproperIndentationError: (stream):2:9: ' \
+        'Improper indentation: key `bar`'
 
     with pytest.raises(errors.ImproperIndentationError) as e:
         loads('''
@@ -149,8 +197,9 @@ def test_parser_meld():
     assert m.qux == 'quux'
 
     m = loads('''
-      foo: bar: 1
-           baz: 2
+      foo:
+        bar: 1
+        baz: 2
     ''')
     assert m.foo.bar == 1
     assert m.foo.baz == 2

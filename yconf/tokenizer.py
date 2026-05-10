@@ -22,7 +22,7 @@ patterns = [
     (Kind.INDENT, r'^ +'),
     (Kind.TAG, r'![\w-]+'),
     (Kind.DASH, r'-(?=\s|$)'),
-    (Kind.KEY, r'[\w-]+:'),
+    (Kind.KEY, r'[\w-]+:((?=\s)|$)'),
     (Kind.FLOAT, r'((?<=\s)|^)-?\d*\.\d+((?=\s)|$)'),
     (Kind.INT, r'((?<=\s)|^)-?\d+((?=\s)|$)'),
     (Kind.BOOL, r'((?<=\s)|^)(false|true|no|yes)((?=\s)|$)'),
