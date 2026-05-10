@@ -31,7 +31,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo git clone https://github.com/pylover/python-makelib.git /usr/local/lib/python-makelib
-        make install-common install-doc editable-install
+        make install-common editable-install
     - name: Lint
       run: make lint
     - name: Test

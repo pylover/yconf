@@ -15,22 +15,24 @@ with open(
         .group(1)
 
 
-dependencies = [
-    # TODO: dependencies
-]
-
-
 setup(
     name='yconf',
     version=package_version,
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',  # This is important!
-    install_requires=dependencies,
     packages=find_packages(
         where='.',
         include=['yconf'],
         exclude=['tests']
     ),
-    # TODO: entrypoints
-    # TODO: classifiers
+    classifiers=[
+        "Development Status :: 5 - Production/Stable",
+        'Intended Audience :: Developers',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
+        'Topic :: Software Development :: Libraries'
+    ],
 )

@@ -68,6 +68,7 @@ into a `Meld`.
 meld |= '''
   foo: bar
   baz: 23
+'''
 ```
 
 And also using the `<<=` you may load a file-like object or a filename into a
@@ -103,7 +104,7 @@ meld >>= 'foo.yml'
 
 ```python
 with open('foo.yml', 'w') as file:
-  meld >>== file
+  meld >>= file
 ```
 
 ## Contribution
