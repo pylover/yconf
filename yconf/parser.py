@@ -1,3 +1,4 @@
+import io
 import os
 import copy
 import subprocess
@@ -48,6 +49,14 @@ class Meld(dict):
             else:
                 self[k] = other
 
+        return self
+
+    def __ilshift__(self, file):
+        self |= load(file)
+        return self
+
+    def __irshift__(self, file):
+        dump(self, file)
         return self
 
 
@@ -189,3 +198,38 @@ def load(file):
 
     with open(file) as f:
         return loads(f.read(), file)
+
+
+def _dump(obj, file, indent=0, indentsize=2):
+    if isinstance(obj, list):
+        for v in obj:
+            if isinstance(v, (dict, list)):
+                file.write(f'{" " * indent}-\n')
+                _dump(v, file, indent + indentsize, indentsize)
+            else:
+                file.write(f'{" " * indent}- {v}\n')
+
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(v, (dict, list)):
+                file.write(f'{" " * indent}{k}:\n')
+                _dump(v, file, indent + indentsize, indentsize)
+            else:
+                file.write(f'{" " * indent}{k}: {v}\n')
+    else:
+        file.write(f'{obj}\n')
+
+
+def dump(obj, file, indent=0, indentsize=2):
+    if isinstance(file, str):
+        with open(file, 'w') as f:
+            _dump(obj, f, indent, indentsize)
+
+    else:
+        _dump(obj, file, indent, indentsize)
+
+
+def dumps(obj, indent=0, indentsize=2):
+    with io.StringIO() as file:
+        dump(obj, file, indent, indentsize)
+        return file.getvalue()

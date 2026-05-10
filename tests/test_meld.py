@@ -1,6 +1,41 @@
+import os
+
 import pytest
 
 from yconf import Meld
+
+
+def test_meld_exportfile(tmpdir):
+    filename = os.path.join(tmpdir, 'foo.yml')
+    m = Meld('''
+      foo: !env USER
+    ''')
+
+    m >>= filename
+    with open(filename) as f:
+        assert f.read() == f'foo: {os.environ["USER"]}\n'
+
+
+def test_meld_mergefile(mktmpfile):
+    file = mktmpfile(content='''
+       foo: BAR
+       bar:
+         baz:
+           a: 1
+           b: 2
+    ''')
+
+    m = Meld('''
+      foo: bar
+      bar:
+        qux: 73
+    ''')
+
+    m <<= file
+    assert m.foo == 'BAR'
+    assert m.bar.qux == 73
+    assert m.bar.baz.a == 1
+    assert m.bar.baz.b == 2
 
 
 def test_meld_merge():

@@ -9,7 +9,7 @@ pip install yconf
 
 ## quickstart
 
-```
+```python
 from yconf import loads
 
 yamldoc = '''
@@ -34,6 +34,77 @@ assert obj.rate == 0.73
 assert obj.fruites == ['cherry', 'melon', 'banana', 'pineapple']
 ```
 
+## Tutorial
+
+### Parsing
+
+You may user `loads(str)` function to parse `YAML` string, and `load(file)` 
+to parse `file-like` object or filename. these functions return a 
+`yconf.Meld` object. The `Meld` object is subclass of the Python's dictionary
+but in addtion you can access the members by `getattr`, `setattr` and 
+`delattr` operations.
+
+
+```python
+meld = loads('foo: bar')
+assert meld.foo == 'bar'
+```
+
+```python
+meld = load('foo.yml')
+```
+
+```python
+with open('foo.yml') as file:
+  meld = load(file)
+```
+
+### Merging/Melting
+
+Using the `|=` operator you may merge any other dictionary or `YAML-string` 
+into a `Meld`.
+
+```python
+meld |= '''
+  foo: bar
+  baz: 23
+```
+
+And also using the `<<=` you may load a file-like object or a filename into a
+`Meld` object.
+
+```python
+meld <<= 'foo.yml'
+```
+
+```python
+with open('foo.yml') as file:
+  meld <<= file
+```
+
+
+### Dump
+
+Use `yconf.dumps(obj) -> str`, `yconf.dump(obj, file)` and also 
+`meld >>= filename`.
+
+```python
+dumps(meld, indent=6, indentsize=2)
+dump(meld, 'foo.yml', indent=6, indentsize=2)
+
+with open('foo.yml', 'w') as file:
+  dump(meld, file, indent=6, indentsize=2)
+
+```
+
+```python
+meld >>= 'foo.yml'
+```
+
+```python
+with open('foo.yml', 'w') as file:
+  meld >>== file
+```
 
 ## Contribution
 
