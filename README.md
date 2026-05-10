@@ -1,5 +1,40 @@
 # yconf
 
+
+## Install
+
+```bash
+pip install yconf
+```
+
+## quickstart
+
+```
+from yconf import loads
+
+yamldoc = '''
+foo:
+  enabled: true
+  title: BAR
+  rate: .73
+  user: !env USER
+  greeting: !shell echo Hello
+
+fruites:
+  - cherry
+  - melon
+  - banana
+  - pineapple
+'''
+
+obj = loads(ymldoc)
+assert obj.foo.enabled
+assert obj.title == 'BAR'
+assert obj.rate == 0.73
+assert obj.fruites == ['cherry', 'melon', 'banana', 'pineapple']
+```
+
+
 ## Contribution
 
 ### Dependencies
