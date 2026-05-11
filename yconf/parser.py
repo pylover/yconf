@@ -81,42 +81,42 @@ class Parser(tokenizer.Tokenizer):
         self._pos += 1
         return t
 
-    def _parse_list_item(self):
+    def _parse_listitem(self):
         self.consume() # INDENT
         self.consume() # DASH
 
-        next_t = self.peek()
-        if next_t.isvalue():
-            return self._try_parse_primitive(self.consume().value)
-        elif next_t.isindent():
+        nxtok = self.peek()
+        if nxtok.isvalue():
+            return self._parse_primitive(self.consume().value)
+        elif nxtok.isindent():
             # Nested structure
-            return self._parse_block(next_t.value - 1)
-        elif next_t.iskey():
+            return self._parse_block(nxtok.value - 1)
+        elif nxtok.iskey():
              # Inline map after dash
              return self._parse_block(self.tokens[self._pos - 2].value) # same indent level conceptually
         return None
 
-    def _parse_mapping_item(self, indent):
+    def _parse_mappingitem(self, indent):
         self.consume() # INDENT
-        key_t = self.consume() # KEY
+        keytok = self.consume() # KEY
         self.consume() # COLON
 
-        next_t = self.peek()
-        if next_t.isvalue():
-            return key_t.value, self._try_parse_primitive(self.consume().value)
-        elif next_t.isindent():
+        nxtok = self.peek()
+        if nxtok.isvalue():
+            return keytok.value, self._parse_primitive(self.consume().value)
+        elif nxtok.isindent():
             # Nested
-            if next_t.value > indent:
-                return key_t.value, self._parse_block(indent)
+            if nxtok.value > indent:
+                return keytok.value, self._parse_block(indent)
             else:
-                return key_t.value, None
+                return keytok.value, None
 
-        elif next_t.iseof():
-            return key_t.value, None
+        elif nxtok.iseof():
+            return keytok.value, None
 
-        return key_t.value, None
+        return keytok.value, None
 
-    def _try_parse_primitive(self, val: str):
+    def _parse_primitive(self, val: str):
         # Strip quotes
         if (val.startswith('"') and val.endswith('"')) \
                 or (val.startswith("'") and val.endswith("'")):
@@ -161,7 +161,7 @@ class Parser(tokenizer.Tokenizer):
                 if not isinstance(this, list):
                     raise errors.InvalidTokenError(nxtok)
 
-                this.append(self._parse_list_item())
+                this.append(self._parse_listitem())
 
             elif nxtok and nxtok.iskey():
                 if this is None:
@@ -170,7 +170,7 @@ class Parser(tokenizer.Tokenizer):
                 if not isinstance(this, dict):
                     raise errors.InvalidTokenError(nxtok)
 
-                key, val = self._parse_mapping_item(indent)
+                key, val = self._parse_mappingitem(indent)
                 if key is not None:
                     this[key] = val
             else:
@@ -180,7 +180,7 @@ class Parser(tokenizer.Tokenizer):
                 # Just a scalar?
                 if nxtok and nxtok.isvalue():
                     self.consume() # indent
-                    return self._try_parse_primitive(self.consume().value)
+                    return self._parse_primitive(self.consume().value)
                 break
 
         return this
