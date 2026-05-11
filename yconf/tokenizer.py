@@ -41,60 +41,54 @@ class Token:
         return self.kind == Kind.VALUE
 
 
-class Tokenizer:
-    def __init__(self, text):
-        self.text = text
-        self.tokens = []
+def _process_content(content, lno, col_offset):
+    if not content:
+        return
 
-    def tokenize(self):
-        lines = self.text.splitlines()
-        for i, line in enumerate(lines):
-            line_num = i
-
-            # Skip empty lines or pure comments
-            stripped = line.strip()
-            if not stripped or stripped.startswith('#'):
-                continue
-
-            # Indentation
-            indent = len(line) - len(line.lstrip())
-            self.tokens.append(Token(Kind.INDENT, indent, line_num, 0))
-
-            # Content without trailing comment
-            content = stripped
-            if '#' in content:
-                content = content.split('#', 1)[0].strip()
-
-            if content.startswith('- '):
-                self.tokens.append(Token(Kind.DASH, '-', line_num, indent))
-                remaining = content[2:].strip()
-                self._process_content(remaining, line_num, indent + 2)
-            elif content == '-':
-                 self.tokens.append(Token(Kind.DASH, '-', line_num, indent))
-            else:
-                self._process_content(content, line_num, indent)
-
-            self.tokens.append(Token(Kind.NEWLINE, None, line_num, len(line)))
-
-        self.tokens.append(Token(Kind.EOF, None, len(lines) + 1, 0))
-        return self.tokens
-
-    def _process_content(self, content, line_num, col_offset):
-        if not content:
-            return
-
-        if ':' in content:
-            # Match key: value or key: (next line value)
-            # We look for ':' followed by optional whitespace
-            match = re.match(r'^([^:]+):\s*(.*)$', content)
-            if match:
-                key, val = match.groups()
-                self.tokens.append(Token(Kind.KEY, key.strip(), line_num, col_offset))
-                self.tokens.append(Token(Kind.COLON, ':', line_num, col_offset + len(key)))
-                if val.strip():
-                    self.tokens.append(Token(Kind.VALUE, val.strip(), line_num, col_offset + len(key) + 2))
-            else:
-                # Fallback for weird cases
-                self.tokens.append(Token(Kind.VALUE, content, line_num, col_offset))
+    if ':' in content:
+        # Match key: value or key: (next line value)
+        # We look for ':' followed by optional whitespace
+        match = re.match(r'^([^:]+):\s*(.*)$', content)
+        if match:
+            key, val = match.groups()
+            yield Token(Kind.KEY, key.strip(), lno, col_offset)
+            yield Token(Kind.COLON, ':', lno, col_offset + len(key))
+            if val.strip():
+                yield Token(Kind.VALUE, val.strip(), lno, col_offset + len(key) + 2)
         else:
-            self.tokens.append(Token(Kind.VALUE, content, line_num, col_offset))
+            # Fallback for weird cases
+            yield Token(Kind.VALUE, content, lno, col_offset)
+    else:
+        yield Token(Kind.VALUE, content, lno, col_offset)
+
+
+def tokenize(text):
+    lines = text.splitlines()
+    for lno, line in enumerate(lines):
+
+        # Skip empty lines or pure comments
+        stripped = line.strip()
+        if not stripped or stripped.startswith('#'):
+            continue
+
+        # Indentation
+        indent = len(line) - len(line.lstrip())
+        yield Token(Kind.INDENT, indent, lno, 0)
+
+        # Content without trailing comment
+        content = stripped
+        if '#' in content:
+            content = content.split('#', 1)[0].strip()
+
+        if content.startswith('- '):
+            yield Token(Kind.DASH, '-', lno, indent)
+            remaining = content[2:].strip()
+            yield from _process_content(remaining, lno, indent + 2)
+        elif content == '-':
+             yield Token(Kind.DASH, '-', lno, indent)
+        else:
+            yield from _process_content(content, lno, indent)
+
+        yield Token(Kind.NEWLINE, None, lno, len(line))
+
+    yield Token(Kind.EOF, None, len(lines) + 1, 0)

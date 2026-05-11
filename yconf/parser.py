@@ -3,7 +3,8 @@ import os
 import copy
 import subprocess
 
-from . import tokenizer, errors
+from .tokenizer import tokenize
+from . import errors
 
 
 class Meld(dict):
@@ -64,22 +65,35 @@ class Meld(dict):
         return self
 
 
-class Parser(tokenizer.Tokenizer):
-    def __init__(self, s, filename=None):
+class Parser:
+    def __init__(self, text, filename=None):
         self._filename = filename
-        self._pos = 0
-        super().__init__(s)
-        self.tokens = [t for t in self.tokenize() if not t.isnewline()]
+        self._tokgen = tokenize(text)
+        self._tokq = []
+        self._consumed = []
 
-    def peek(self):
-        if self._pos < len(self.tokens):
-            return self.tokens[self._pos]
-        return self.tokens[-1]
+    def peek(self, index=0):
+        if len(self._tokq) <= index:
+            try:
+                while len(self._tokq) <= index:
+                    tok = next(self._tokgen)
+                    if tok.isnewline():
+                        continue
+
+                    self._tokq.append(tok)
+
+            except StopIteration:
+                return None
+
+        return self._tokq[index]
 
     def consume(self):
-        t = self.peek()
-        self._pos += 1
-        return t
+        if not self._tokq:
+            self.peek()
+
+        tok = self._tokq.pop(0)
+        self._consumed.append(tok)
+        return tok
 
     def _parse_listitem(self):
         self.consume() # INDENT
@@ -93,7 +107,9 @@ class Parser(tokenizer.Tokenizer):
             return self._parse_block(nxtok.value - 1)
         elif nxtok.iskey():
              # Inline map after dash
-             return self._parse_block(self.tokens[self._pos - 2].value) # same indent level conceptually
+             # same indent level conceptually
+             return self._parse_block(self._consumed[-2].value)
+
         return None
 
     def _parse_mappingitem(self, indent):
@@ -152,7 +168,7 @@ class Parser(tokenizer.Tokenizer):
 
             # Decide list or map
             # Advance to see what's after indent
-            nxtok = self.tokens[self._pos + 1] if self._pos + 1 < len(self.tokens) else None
+            nxtok = self.peek(1)
 
             if nxtok and nxtok.isdash():
                 if this is None:
