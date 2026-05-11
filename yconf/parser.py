@@ -66,140 +66,131 @@ class Meld(dict):
 
 class Parser(tokenizer.Tokenizer):
     def __init__(self, s, filename=None):
-        self._indentoffset = None
-        self._indentsize = None
         self._filename = filename
+        self._pos = 0
         super().__init__(s)
+        self.tokens = [t for t in self.tokenize() if not t.isnewline()]
 
-    def _tokindent(self, tok):
-        return tok.value - self._indentoffset
+    def peek(self):
+        if self._pos < len(self.tokens):
+            return self.tokens[self._pos]
+        return self.tokens[-1]
 
-    def _isindentout(self, tok, indent):
-        return self._tokindent(tok) < indent
+    def consume(self):
+        t = self.peek()
+        self._pos += 1
+        return t
 
-    def _isindentin(self, tok, indent):
-        return self._tokindent(tok) > indent
+    def _parse_list_item(self):
+        self.consume() # INDENT
+        self.consume() # DASH
 
-    def _include(self, this, tok):
-        m = load(tok.value)
-        if this is None:
-            return m
+        next_t = self.peek()
+        if next_t.isvalue():
+            return self._try_parse_primitive(self.consume().value)
+        elif next_t.isindent():
+            # Nested structure
+            return self._parse_block(next_t.value - 1)
+        elif next_t.iskey():
+             # Inline map after dash
+             return self._parse_block(self.tokens[self._pos - 2].value) # same indent level conceptually
+        return None
 
-        if isinstance(this, dict):
-            this |= m
+    def _parse_mapping_item(self, indent):
+        self.consume() # INDENT
+        key_t = self.consume() # KEY
+        self.consume() # COLON
 
-        elif isinstance(this, list):
-            this.extend(m)
+        next_t = self.peek()
+        if next_t.isvalue():
+            return key_t.value, self._try_parse_primitive(self.consume().value)
+        elif next_t.isindent():
+            # Nested
+            if next_t.value > indent:
+                return key_t.value, self._parse_block(indent)
+            else:
+                return key_t.value, None
+
+        elif next_t.iseof():
+            return key_t.value, None
+
+        return key_t.value, None
+
+    def _try_parse_primitive(self, val: str):
+        # Strip quotes
+        if (val.startswith('"') and val.endswith('"')) \
+                or (val.startswith("'") and val.endswith("'")):
+            return val[1:-1]
+
+        v_lower = val.lower()
+        if v_lower == 'true': return True
+        if v_lower == 'false': return False
+        if v_lower == 'null': return None
+
+        try:
+            if '.' in val: return float(val)
+            return int(val)
+        except ValueError:
+            return val
+
+    def _parse_block(self, min_indent):
+        this = None
+
+        while not self.peek().iseof():
+            tok = self.peek()
+
+            # Check indentation to see if we've exited this block
+            indent = 0
+            if tok.isindent():
+                indent = tok.value
+                if indent <= min_indent:
+                    break
+            else:
+                # If no indent token, assume 0
+                if min_indent >= 0:
+                    break
+
+            # Decide list or map
+            # Advance to see what's after indent
+            nxtok = self.tokens[self._pos + 1] if self._pos + 1 < len(self.tokens) else None
+
+            if nxtok and nxtok.isdash():
+                if this is None:
+                    this = []
+
+                if not isinstance(this, list):
+                    raise errors.InvalidTokenError(nxtok)
+
+                this.append(self._parse_list_item())
+
+            elif nxtok and nxtok.iskey():
+                if this is None:
+                    this = Meld()
+
+                if not isinstance(this, dict):
+                    raise errors.InvalidTokenError(nxtok)
+
+                key, val = self._parse_mapping_item(indent)
+                if key is not None:
+                    this[key] = val
+            else:
+                if this is not None:
+                    raise errors.InvalidTokenError(nxtok)
+
+                # Just a scalar?
+                if nxtok and nxtok.isvalue():
+                    self.consume() # indent
+                    return self._try_parse_primitive(self.consume().value)
+                break
 
         return this
 
-    def _environ(self, this, tok):
-        return os.environ.get(tok.value)
+    def parse(self):
+        # Initial empty YAML check
+        if self.peek().iseof():
+            return None
 
-    def _shell(self, this, tok):
-        result = subprocess.run(
-            tok.value,
-            shell=True,
-            check=True,
-            text=True,
-            capture_output=True,
-        )
-
-        return result.stdout.strip()
-
-    def _tag(self, this, tok):
-        if tok.value == 'include':
-            if self.peek() is None:
-                raise errors.ExpectedTokenError(
-                    tok, 'filename', self._filename
-                )
-
-            return self._include(this, self.pop())
-
-        if tok.value == 'env':
-            if self.peek() is None:
-                raise errors.ExpectedTokenError(
-                    tok, 'environment variable', self._filename
-                )
-
-            return self._environ(this, self.pop())
-
-        if tok.value == 'shell':
-            if self.peek() is None:
-                raise errors.ExpectedTokenError(
-                    tok, 'shell command', self._filename
-                )
-
-            return self._shell(this, self.pop())
-
-        raise errors.UnknownTagError(tok, self._filename)
-
-    def parse(self, indent=0):
-        this = None
-        while True:
-            if (nxtok := self.peek()) is None:
-                return this
-
-            if nxtok.isindent():
-                if self._indentoffset is None:
-                    if indent == 0:
-                        self._indentoffset = nxtok.value
-                    else:
-                        self._indentoffset = 0
-
-                if self._isindentin(nxtok, indent):
-                    if self._indentsize is None:
-                        indent = self._indentsize = self._tokindent(nxtok)
-
-                elif self._isindentout(nxtok, indent):
-                    if indent == 0:
-                        self.pop()
-                        if self.peek():
-                            raise errors.ImproperIndentationError(
-                                self.peek(), self._filename
-                            )
-                    return this
-
-                self.pop()
-                if self.peek():
-                    if indent < 0 or (
-                        self._indentsize
-                        and self._tokindent(nxtok) % self._indentsize
-                    ):
-                        raise errors.ImproperIndentationError(
-                            self.peek(), self._filename
-                        )
-
-            if (tok := self.pop()) is None:
-                return this
-
-            if tok.isnewline():
-                continue
-
-            if tok.isliteral():
-                if this is not None:
-                    raise errors.InvalidTokenError(tok, self._filename)
-
-                return tok.value
-
-            if tok.iskey():
-                if this is None:
-                    this = Meld()
-                elif not isinstance(this, dict):
-                    raise errors.InvalidTokenError(tok, self._filename)
-
-                this[tok.value] = self.parse(indent + (self._indentsize or 1))
-
-            elif tok.isdash():
-                if this is None:
-                    this = list()
-                elif not isinstance(this, list):
-                    raise errors.InvalidTokenError(tok, self._filename)
-
-                this.append(self.parse(indent + (self._indentsize or 1)))
-
-            elif tok.istag():
-                this = self._tag(this, tok)
+        return self._parse_block(-1)
 
 
 def loads(s, filename=None):

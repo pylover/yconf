@@ -1,135 +1,100 @@
 import re
-from typing import NamedTuple
-from enum import StrEnum, auto
+from enum import Enum, auto
 
 
-class Kind(StrEnum):
-    COMMENT = auto()
-    SKIP = auto()
+class Kind(Enum):
     INDENT = auto()
-    NEWLINE = auto()
     KEY = auto()
+    VALUE = auto()
     DASH = auto()
-    STRING = auto()
-    FLOAT = auto()
-    INT = auto()
-    BOOL = auto()
-    TAG = auto()
+    NEWLINE = auto()
+    COLON = auto()
+    EOF = auto()
 
 
-patterns = [
-    (Kind.COMMENT, r'#.*'),
-    (Kind.INDENT, r'^ +'),
-    (Kind.TAG, r'![\w-]+'),
-    (Kind.DASH, r'-(?=\s|$)'),
-    (Kind.KEY, r'[\w-]+:((?=\s)|$)'),
-    (Kind.FLOAT, r'((?<=\s)|^)-?\d*\.\d+((?=\s)|$)'),
-    (Kind.INT, r'((?<=\s)|^)-?\d+((?=\s)|$)'),
-    (Kind.BOOL, r'((?<=\s)|^)(false|true|no|yes)((?=\s)|$)'),
-    (Kind.SKIP, r'[ \t]+'),
-    (Kind.NEWLINE, r'\n'),
-    (Kind.STRING, r'"[^"]*"|\'[^\']*\'|[^\s].*'),
-]
+class Token:
+    def __init__(self, kind, value, line, column):
+        self.kind = kind
+        self.value = value
+        self.line = line
+        self.column = column
 
-
-class Token(NamedTuple):
-    kind: Kind
-    value: str
-    line: int
-    column: int
-
-    def isliteral(self):
-        return self.kind in (Kind.STRING, Kind.FLOAT, Kind.INT, Kind.BOOL)
-
-    def isindent(self):
-        return self.kind == Kind.INDENT
-
-    def iskey(self):
-        return self.kind == Kind.KEY
-
-    def isdash(self):
-        return self.kind == Kind.DASH
+    def __repr__(self):
+        return f"Token({self.kind.name}, {repr(self.value)})"
 
     def isnewline(self):
         return self.kind == Kind.NEWLINE
 
-    def istag(self):
-        return self.kind == Kind.TAG
+    def iseof(self):
+        return self.kind == Kind.EOF
 
-    @classmethod
-    def new(cls, kind, value, line, column):
-        if kind == Kind.INDENT:
-            value = len(value)
+    def isindent(self):
+        return self.kind == Kind.INDENT
 
-        if kind == Kind.STRING:
-            value = value.strip('"\'')
+    def isdash(self):
+        return self.kind == Kind.DASH
 
-        if kind == Kind.FLOAT:
-            value = float(value)
+    def iskey(self):
+        return self.kind == Kind.KEY
 
-        if kind == Kind.INT:
-            value = int(value)
-
-        if kind == Kind.BOOL:
-            value = value.lower() in ('true', 'yes')
-
-        if kind == Kind.KEY:
-            value = value[:-1]
-
-        if kind == Kind.TAG:
-            value = value[1:]
-
-        return cls(kind, value, line, column)
+    def isvalue(self):
+        return self.kind == Kind.VALUE
 
 
 class Tokenizer:
-    def __init__(self, blob):
-        pattern = '|'.join(f'(?P<{kind}>{pat})' for kind, pat in patterns)
-        tok_regex = re.compile(pattern, re.MULTILINE | re.IGNORECASE)
-        self._line = 0
-        self._char = 0
-        self._gen = tok_regex.finditer(blob)
-        self._cache = []
+    def __init__(self, text):
+        self.text = text
+        self.tokens = []
 
-    def _pop(self):
-        while True:
-            try:
-                m = next(self._gen)
-            except StopIteration:
-                return None
+    def tokenize(self):
+        lines = self.text.splitlines()
+        for i, line in enumerate(lines):
+            line_num = i
 
-            kind = m.lastgroup
-
-            if kind == Kind.SKIP or kind == Kind.COMMENT:
+            # Skip empty lines or pure comments
+            stripped = line.strip()
+            if not stripped or stripped.startswith('#'):
                 continue
 
-            tok = Token.new(
-                kind,
-                m.group(),
-                self._line,
-                m.start() - self._char
-            )
+            # Indentation
+            indent = len(line) - len(line.lstrip())
+            self.tokens.append(Token(Kind.INDENT, indent, line_num, 0))
 
-            if kind == Kind.NEWLINE:
-                self._char = m.end()
-                self._line += 1
+            # Content without trailing comment
+            content = stripped
+            if '#' in content:
+                content = content.split('#', 1)[0].strip()
 
-            return tok
+            if content.startswith('- '):
+                self.tokens.append(Token(Kind.DASH, '-', line_num, indent))
+                remaining = content[2:].strip()
+                self._process_content(remaining, line_num, indent + 2)
+            elif content == '-':
+                 self.tokens.append(Token(Kind.DASH, '-', line_num, indent))
+            else:
+                self._process_content(content, line_num, indent)
 
-    def peek(self):
-        if not self._cache:
-            tok = self._pop()
-            if tok is None:
-                return None
+            self.tokens.append(Token(Kind.NEWLINE, None, line_num, len(line)))
 
-            self._cache.append(tok)
+        self.tokens.append(Token(Kind.EOF, None, len(lines) + 1, 0))
+        return self.tokens
 
-            return tok
+    def _process_content(self, content, line_num, col_offset):
+        if not content:
+            return
 
-        return self._cache[0]
-
-    def pop(self):
-        if self._cache:
-            return self._cache.pop(0)
-
-        return self._pop()
+        if ':' in content:
+            # Match key: value or key: (next line value)
+            # We look for ':' followed by optional whitespace
+            match = re.match(r'^([^:]+):\s*(.*)$', content)
+            if match:
+                key, val = match.groups()
+                self.tokens.append(Token(Kind.KEY, key.strip(), line_num, col_offset))
+                self.tokens.append(Token(Kind.COLON, ':', line_num, col_offset + len(key)))
+                if val.strip():
+                    self.tokens.append(Token(Kind.VALUE, val.strip(), line_num, col_offset + len(key) + 2))
+            else:
+                # Fallback for weird cases
+                self.tokens.append(Token(Kind.VALUE, content, line_num, col_offset))
+        else:
+            self.tokens.append(Token(Kind.VALUE, content, line_num, col_offset))

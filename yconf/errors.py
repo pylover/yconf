@@ -6,7 +6,7 @@ class YConfException(Exception):
         file = (filename if filename.startswith('/')
                 else os.path.relpath(filename)) if filename else '(stream)'
         super().__init__(
-            f'{file}:{tok.line}:{tok.column}: {title}: {tok.kind} '
+            f'{file}:{tok.line}:{tok.column}: {title}: {tok.kind.name} '
             f'`{tok.value}`'
         )
 

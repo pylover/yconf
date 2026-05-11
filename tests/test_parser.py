@@ -3,144 +3,16 @@ import pytest
 from yconf import loads, Meld, errors
 
 
-"""
-                               Meld    list
-                                ^       ^
-                                |       |
-      | CR | indt+ | indt-   | key   | dash  | value | None   | tag
---------------------------------------------------------------------------
-New   | NC | New   | < None  | > new | > new | < val | < None | Meld/list
-Meld  | NC | New > | < Meld  | > new | Error | Error | < None | Meld
-list  | NC | New > | < list  | Error | > new | Error | < None | list
+# def test_parser_unknowntag():
+#     with pytest.raises(errors.UnknownTagError) as e:
+#         loads('!foobar:')
+#
+#     assert e.exconly() == \
+#         'yconf.errors.UnknownTagError: (stream):0:0: Unknown tag: ' \
+#         'foobar: tag `foobar`'
 
 
-guide:
-<       return
->       recurse
-"""
-
-
-def test_parser_indentation():
-    #     m = Meld()
-    #     m |= '''
-    # toc:
-    # metadata:
-    #   foo: bar
-    # '''
-    #     assert m.metadata.foo == 'bar'
-
-    m = loads('\n'.join([
-        'foo:',
-        '  bar: baz',
-        'qux: thud',
-    ]))
-    assert m.foo.bar == 'baz'
-    assert m.qux == thud
-
-    m = loads('''
-      foo:
-        bar:
-      baz:
-        qux: false
-    ''')
-    assert m.baz.qux is False
-
-    m = loads('''
-      foo:
-       a: 1
-    ''')
-    assert m.foo.a == 1
-
-    m = loads('''
-      foo:
-            a: 1
-    ''')
-    assert m.foo.a == 1
-
-
-def test_parser_emptytag():
-    m = loads('''
-      foo:
-      bar: baz
-    ''')
-
-    assert m.foo is None
-    assert m.bar == 'baz'
-
-
-def test_parser_unknowntag():
-    with pytest.raises(errors.UnknownTagError) as e:
-        loads('!foobar:')
-
-    assert e.exconly() == \
-        'yconf.errors.UnknownTagError: (stream):0:0: Unknown tag: ' \
-        'foobar: tag `foobar`'
-
-
-def test_parser_indentation_errors():
-    with pytest.raises(errors.ImproperIndentationError) as e:
-        loads('''
-          foo:
-            bar: 1
-           baz: 2
-        ''')
-    assert e.exconly() == \
-        'yconf.errors.ImproperIndentationError: (stream):3:11: ' \
-        'Improper indentation: key `baz`'
-
-    with pytest.raises(errors.ImproperIndentationError) as e:
-        loads('''
-          foo:
-         bar:
-        ''')
-    assert e.exconly() == \
-        'yconf.errors.ImproperIndentationError: (stream):2:9: ' \
-        'Improper indentation: key `bar`'
-
-    with pytest.raises(errors.ImproperIndentationError) as e:
-        loads('''
-          foo:
-            bar: 1
-             baz: 2
-        ''')
-    assert e.exconly() == \
-        'yconf.errors.ImproperIndentationError: (stream):3:13: ' \
-        'Improper indentation: key `baz`'
-
-
-def test_parser_chain_errors():
-    with pytest.raises(errors.InvalidTokenError) as e:
-        loads('''
-          - foo
-          bar: 1
-        ''')
-
-    assert e.exconly() == \
-        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
-        'key `bar`'
-
-    with pytest.raises(errors.InvalidTokenError) as e:
-        loads('''
-          - foo
-          bar
-        ''')
-
-    assert e.exconly() == \
-        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
-        'string `bar`'
-
-
-def test_parser_meld_errors():
-    with pytest.raises(errors.InvalidTokenError) as e:
-        loads('''
-          foo: 2
-          - baz
-        ''')
-
-    assert e.exconly() == \
-        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
-        'dash `-`'
-
+def test_parser_errors():
     with pytest.raises(errors.InvalidTokenError) as e:
         loads('''
           foo: bar
@@ -149,13 +21,44 @@ def test_parser_meld_errors():
 
     assert e.exconly() == \
         'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
-        'string `baz`'
+        'VALUE `baz`'
+
+    with pytest.raises(errors.InvalidTokenError) as e:
+        loads('''
+          foo: 2
+          - baz
+        ''')
+
+    assert e.exconly() == \
+        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
+        'DASH `-`'
+
+    with pytest.raises(errors.InvalidTokenError) as e:
+        m = loads('''
+          - foo
+          bar
+        ''')
+
+    assert e.exconly() == \
+        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
+        'VALUE `bar`'
+
+    with pytest.raises(errors.InvalidTokenError) as e:
+        loads('''
+          - foo
+          bar: 1
+        ''')
+
+    assert e.exconly() == \
+        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
+        'KEY `bar`'
 
 
 def test_parser_chain_meld():
     m = loads('''
       - foo
-      - bar: 2
+      -
+        bar: 2
         baz: 3
       -
         qux: 4
@@ -232,3 +135,43 @@ def test_parser_literal():
 
     n = loads('.73')
     assert n == .73
+
+
+def test_parser_indentation():
+    m = loads('\n'.join([
+        'foo:',
+        '  bar: baz',
+        'qux: thud',
+    ]))
+    assert m.foo.bar == 'baz'
+    assert m.qux == 'thud'
+
+    m = loads('''
+      foo:
+        bar:
+      baz:
+        qux: false
+    ''')
+    assert m.baz.qux is False
+
+    m = loads('''
+      foo:
+       a: 1
+    ''')
+    assert m.foo.a == 1
+
+    m = loads('''
+      foo:
+            a: 1
+    ''')
+    assert m.foo.a == 1
+
+
+def test_parser_emptytag():
+    m = loads('''
+      foo:
+      bar: baz
+    ''')
+
+    assert m.foo is None
+    assert m.bar == 'baz'
