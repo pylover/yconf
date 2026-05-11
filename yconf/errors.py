@@ -23,7 +23,7 @@ class ImproperIndentationError(YConfException):
 
 class ExpectedTokenError(YConfException):
     def __init__(self, tok, expected, filename=None):
-        super().__init__(tok, f'Expected {expected}', filename)
+        super().__init__(tok, f'Expected {expected}, found', filename)
 
 
 class UnknownTagError(YConfException):

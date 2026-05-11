@@ -10,6 +10,9 @@ class Kind(Enum):
     NEWLINE = auto()
     COLON = auto()
     EOF = auto()
+    INCLUDE = auto()
+    EXCLAM = auto()
+    TAG = auto()
 
 
 class Token:
@@ -43,32 +46,55 @@ class Token:
     def iscolon(self):
         return self.kind == Kind.COLON
 
-def _process_content(content, lno, col_offset):
+    def isexclam(self):
+        return self.kind == Kind.EXCLAM
+
+
+def _process_tag(content, lno, col):
+    yield Token(Kind.EXCLAM, '!', lno, col)
+    content = content[1:]
+    if not content:
+        return
+
+    m = re.match(r'(\w+)(\s+)(.+)', content)
+    if not m:
+        # Fallback single word tag
+        yield Token(Kind.TAG, content, lno, col)
+        return
+
+    tag, spaces, value = m.groups()
+    yield Token(Kind.TAG, tag, lno, col + 1)
+    yield Token(Kind.VALUE, value, lno, col + 1 + len(spaces) + len(tag))
+
+
+def _process_content(content, lno, col):
     if not content:
         return
 
     if ':' == content:
-        yield Token(Kind.COLON, ':', lno, col_offset)
+        yield Token(Kind.COLON, ':', lno, col)
 
     elif ':' in content:
         # Match key: value or key: (next line value)
         # We look for ':' followed by optional whitespace
+        # FIXME: compile
         match = re.match(r'^([^:]+):\s*(.*)$', content)
         if match:
             key, val = match.groups()
-            yield Token(Kind.KEY, key.strip(), lno, col_offset)
-            yield Token(Kind.COLON, ':', lno, col_offset + len(key))
+            yield Token(Kind.KEY, key.strip(), lno, col)
+            yield Token(Kind.COLON, ':', lno, col + len(key))
             if val.strip():
-                yield Token(Kind.VALUE, val.strip(), lno, col_offset + len(key) + 2)
+                yield Token(Kind.VALUE, val.strip(), lno, col + len(key) + 2)
         else:
             # Fallback for weird cases
-            yield Token(Kind.VALUE, content, lno, col_offset)
+            yield Token(Kind.VALUE, content, lno, col)
     else:
-        yield Token(Kind.VALUE, content, lno, col_offset)
+        yield Token(Kind.VALUE, content, lno, col)
 
 
 def tokenize(text):
     lines = text.splitlines()
+    lno = 0
     for lno, line in enumerate(lines):
 
         # Skip empty lines or pure comments
@@ -91,9 +117,12 @@ def tokenize(text):
             yield from _process_content(remaining, lno, indent + 2)
         elif content == '-':
              yield Token(Kind.DASH, '-', lno, indent)
+        elif content.startswith('!'):
+            yield from _process_tag(content, lno, indent)
         else:
             yield from _process_content(content, lno, indent)
 
+        # FIXME: maybe no need this token at all
         yield Token(Kind.NEWLINE, None, lno, len(line))
 
-    yield Token(Kind.EOF, None, len(lines) + 1, 0)
+    yield Token(Kind.EOF, None, lno, 0)

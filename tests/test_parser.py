@@ -13,8 +13,6 @@ from yconf import loads, Meld, errors
 
 
 def test_parser_list():
-    # m = loads('foo:')
-
     m = loads('''
       - :
         bar: 1
@@ -112,6 +110,9 @@ def test_parser_errors():
 
 
 def test_parser_meld():
+    m = loads('foo:')
+    assert m.foo is None
+
     m = loads('''
       foo: FOO
       bar: 1

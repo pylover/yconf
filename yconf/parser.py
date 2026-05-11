@@ -129,9 +129,9 @@ class Parser:
         return None
 
     def _parse_mappingitem(self, indent):
-        self.consume() # INDENT
-        keytok = self.consume() # KEY
-        self.consume() # COLON
+        self.consume(Kind.INDENT)
+        keytok = self.consume(Kind.KEY)
+        self.consume(Kind.COLON)
 
         nxtok = self.peek()
         if nxtok.isvalue():
@@ -165,6 +165,16 @@ class Parser:
         except ValueError:
             return val
 
+    def _parse_tag(self, this):
+        self.consume(Kind.INDENT)
+        self.consume(Kind.EXCLAM)
+        tagtok = self.consume(Kind.TAG)
+        if tagtok.value == 'include':
+            filenametok = self.consume(Kind.VALUE)
+            return load(filenametok.value)
+
+        raise errors.UnknownTagError(tagtok, self._filename)
+
     def _parse_block(self, min_indent):
         this = None
 
@@ -182,8 +192,10 @@ class Parser:
             # Decide list or map
             # Advance to see what's after indent
             nxtok = self.peek(1)
+            if nxtok is None:
+                return this
 
-            if nxtok and nxtok.isdash():
+            if nxtok.isdash():
                 if this is None:
                     this = []
 
@@ -192,16 +204,45 @@ class Parser:
 
                 this.append(self._parse_listitem())
 
-            elif nxtok and nxtok.iskey():
+            elif nxtok.iskey():
                 if this is None:
                     this = Meld()
 
-                if not isinstance(this, dict):
+                if not isinstance(this, Meld):
                     raise errors.InvalidTokenError(nxtok, self._filename)
 
                 key, val = self._parse_mappingitem(indent)
                 if key is not None:
                     this[key] = val
+
+            elif nxtok.isexclam():
+                val = self._parse_tag(this)
+                if this is None:
+                    if isinstance(val, Meld):
+                        this = val
+
+                    elif isinstance(val, list):
+                        this = val
+
+                    else:
+                        return val
+                elif isinstance(this, Meld):
+                    if isinstance(val, list):
+                        raise errors.IncludeMismatchError(
+                            nxtok, list, type(val), self._filename
+                        )
+
+                    this |= val
+
+                else:
+                    # list
+                    if not isinstance(val, list):
+                        raise errors.IncludeMismatchError(
+                            nxtok, list, type(val), self._filename
+                        )
+
+                    this.extend(val)
+
             else:
                 if this is not None:
                     raise errors.InvalidTokenError(nxtok, self._filename)
@@ -210,6 +251,7 @@ class Parser:
                 if nxtok and nxtok.isvalue():
                     self.consume() # indent
                     return self._parse_primitive(self.consume().value)
+
                 break
 
         return this

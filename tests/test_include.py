@@ -1,17 +1,48 @@
-# import pytest
+import pytest
+
+from yconf import loads, errors
+
+
+def test_include_meld(mktmpfile):
+    qux = mktmpfile(name='qux.yml', content='''
+      foo: BAR
+      bar: FOO
+      baz:
+       a: 1
+    ''')
+
+    thud = mktmpfile(name='thud.yml', content='''
+      d: 4
+    ''')
+
+    m = loads(f'''
+      foo: bar
+      baz:
+        b: 2
+        c: 3
+        !include {thud}
+
+      !include {qux}
+    ''')
 #
-# from yconf import loads, errors
-#
-#
-# def test_include_error(mktmpfile):
-#     with pytest.raises(errors.ExpectedTokenError) as e:
-#         loads('!include')
-#
-#     assert e.exconly() == \
-#         'yconf.errors.ExpectedTokenError: (stream):0:0: Expected filename: ' \
-#         'tag `include`'
-#
-#
+#     assert m.foo == 'BAR'
+#     assert m.bar == 'FOO'
+#     assert m.baz.zero == 0
+#     assert m.baz.a == 1
+#     assert m.baz.b == 2
+#     assert m.baz.c == 3
+#     assert m.baz.d == 4
+
+
+def test_include_error(mktmpfile):
+    with pytest.raises(errors.ExpectedTokenError) as e:
+        loads('!include')
+
+    assert e.exconly() == \
+        'yconf.errors.ExpectedTokenError: (stream):0:0: Expected VALUE, ' \
+        'found: EOF `None`'
+
+
 # def test_include_literal(mktmpfile):
 #     qux = mktmpfile(name='qux.yml', content='FOO')
 #
@@ -44,40 +75,3 @@
 #     m = loads(f'!include {qux}')
 #
 #     assert m.foo == 'BAR'
-#
-#
-# def test_include_meld(mktmpfile):
-#     qux = mktmpfile(name='qux.yml', content='''
-#       foo: BAR
-#       bar: FOO
-#       baz:
-#        a: 1
-#     ''')
-#
-#     thud = mktmpfile(name='thud.yml', content='''
-#       d: 4
-#     ''')
-#
-#     corge = mktmpfile(content='''
-#       zero: 0
-#       a: a
-#       b: b
-#     ''')
-#
-#     m = loads(f'''
-#       foo: bar
-#       baz: !include {corge}
-#         b: 2
-#         c: 3
-#         !include {thud}
-#
-#       !include {qux}
-#     ''')
-#
-#     assert m.foo == 'BAR'
-#     assert m.bar == 'FOO'
-#     assert m.baz.zero == 0
-#     assert m.baz.a == 1
-#     assert m.baz.b == 2
-#     assert m.baz.c == 3
-#     assert m.baz.d == 4
