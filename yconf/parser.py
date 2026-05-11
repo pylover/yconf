@@ -3,7 +3,7 @@ import os
 import copy
 import subprocess
 
-from .tokenizer import tokenize
+from .tokenizer import tokenize, Token, Kind
 from . import errors
 
 
@@ -87,28 +87,44 @@ class Parser:
 
         return self._tokq[index]
 
-    def consume(self):
+    def consume(self, kind=None):
         if not self._tokq:
             self.peek()
 
         tok = self._tokq.pop(0)
         self._consumed.append(tok)
+        while len(self._consumed) > 2:
+            self._consumed.pop(0)
+
+        if kind and tok.kind != kind:
+            raise errors.ExpectedTokenError(tok, kind.name, self._filename)
+
         return tok
 
     def _parse_listitem(self):
-        self.consume() # INDENT
-        self.consume() # DASH
+        self.consume(Kind.INDENT)
+        dash = self.consume(Kind.DASH)
 
         nxtok = self.peek()
         if nxtok.isvalue():
             return self._parse_primitive(self.consume().value)
+
         elif nxtok.isindent():
             # Nested structure
             return self._parse_block(nxtok.value - 1)
+
         elif nxtok.iskey():
              # Inline map after dash
-             # same indent level conceptually
-             return self._parse_block(self._consumed[-2].value)
+             # just ineject an indetat into the self._tokq
+             self._tokq.insert(
+                 0,
+                 Token(Kind.INDENT, nxtok.column, nxtok.line, 0)
+             )
+             return self._parse_block(dash.column)
+
+        elif nxtok.iscolon():
+            self.consume(Kind.COLON)
+            return self._parse_block(dash.column)
 
         return None
 
@@ -156,15 +172,12 @@ class Parser:
             tok = self.peek()
 
             # Check indentation to see if we've exited this block
-            indent = 0
-            if tok.isindent():
-                indent = tok.value
-                if indent <= min_indent:
-                    break
-            else:
-                # If no indent token, assume 0
-                if min_indent >= 0:
-                    break
+            if not tok.isindent():
+                raise errors.ExpectedTokenError(tok, 'INDENT', self._filename)
+
+            indent = tok.value
+            if indent <= min_indent:
+                break
 
             # Decide list or map
             # Advance to see what's after indent
@@ -175,7 +188,7 @@ class Parser:
                     this = []
 
                 if not isinstance(this, list):
-                    raise errors.InvalidTokenError(nxtok)
+                    raise errors.InvalidTokenError(nxtok, self._filename)
 
                 this.append(self._parse_listitem())
 
@@ -184,14 +197,14 @@ class Parser:
                     this = Meld()
 
                 if not isinstance(this, dict):
-                    raise errors.InvalidTokenError(nxtok)
+                    raise errors.InvalidTokenError(nxtok, self._filename)
 
                 key, val = self._parse_mappingitem(indent)
                 if key is not None:
                     this[key] = val
             else:
                 if this is not None:
-                    raise errors.InvalidTokenError(nxtok)
+                    raise errors.InvalidTokenError(nxtok, self._filename)
 
                 # Just a scalar?
                 if nxtok and nxtok.isvalue():

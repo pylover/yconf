@@ -12,6 +12,63 @@ from yconf import loads, Meld, errors
 #         'foobar: tag `foobar`'
 
 
+def test_parser_list():
+    # m = loads('foo:')
+
+    m = loads('''
+      - :
+        bar: 1
+        baz: 2
+    ''')
+    assert m[0].bar == 1
+    assert m[0].baz == 2
+
+    m = loads('''
+      -:
+        bar: 1
+        baz: 2
+    ''')
+    assert m['-'].bar == 1
+    assert m['-'].baz == 2
+
+    m = loads('''
+      - foo:
+          bar: 1
+    ''')
+    assert m[0].foo.bar == 1
+
+    m = loads('''
+      - foo:
+        bar: 1
+    ''')
+    assert m[0].foo is None
+    assert m[0].bar == 1
+
+    m = loads('''
+      - foo
+      - .73
+    ''')
+
+    assert isinstance(m, list)
+    assert m[0] == 'foo'
+    assert m[1] == .73
+
+    m = loads('''
+      - foo
+      -
+        bar: 2
+        baz: 3
+      -
+        qux: 4
+    ''')
+
+    assert isinstance(m, list)
+    assert m[0] == 'foo'
+    assert m[1].bar == 2
+    assert m[1].baz == 3
+    assert m[2].qux == 4
+
+
 def test_parser_errors():
     with pytest.raises(errors.InvalidTokenError) as e:
         loads('''
@@ -52,34 +109,6 @@ def test_parser_errors():
     assert e.exconly() == \
         'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
         'KEY `bar`'
-
-
-def test_parser_chain_meld():
-    m = loads('''
-      - foo
-      -
-        bar: 2
-        baz: 3
-      -
-        qux: 4
-    ''')
-
-    assert isinstance(m, list)
-    assert m[0] == 'foo'
-    assert m[1].bar == 2
-    assert m[1].baz == 3
-    assert m[2].qux == 4
-
-
-def test_parser_chain():
-    m = loads('''
-      - foo
-      - .73
-    ''')
-
-    assert isinstance(m, list)
-    assert m[0] == 'foo'
-    assert m[1] == .73
 
 
 def test_parser_meld():

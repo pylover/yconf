@@ -40,12 +40,17 @@ class Token:
     def isvalue(self):
         return self.kind == Kind.VALUE
 
+    def iscolon(self):
+        return self.kind == Kind.COLON
 
 def _process_content(content, lno, col_offset):
     if not content:
         return
 
-    if ':' in content:
+    if ':' == content:
+        yield Token(Kind.COLON, ':', lno, col_offset)
+
+    elif ':' in content:
         # Match key: value or key: (next line value)
         # We look for ':' followed by optional whitespace
         match = re.match(r'^([^:]+):\s*(.*)$', content)
