@@ -5,6 +5,6 @@ exclude =
 	.*
 
 per-file-ignores =
-	yconf/__init__.py: F401
-	yconf/**/__init__.py: F401
+	snam/__init__.py: F401
+	snam/**/__init__.py: F401
     tests/conftest.py: F401, F811

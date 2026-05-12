@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from yconf import Meld
+from snam import Meld
 
 
 def test_meld_exportfile(tmpdir):

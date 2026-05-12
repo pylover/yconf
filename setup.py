@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 # reading package's version (same way sqlalchemy does)
 with open(
-    os.path.join(os.path.dirname(__file__), 'yconf', '__init__.py')
+    os.path.join(os.path.dirname(__file__), 'snam', '__init__.py')
 ) as v_file:
     package_version = \
         re.compile('.*__version__ = \'(.*?)\'', re.S) \
@@ -16,13 +16,13 @@ with open(
 
 
 setup(
-    name='yconf',
+    name='snam',
     version=package_version,
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',  # This is important!
     packages=find_packages(
         where='.',
-        include=['yconf'],
+        include=['snam'],
         exclude=['tests']
     ),
     classifiers=[

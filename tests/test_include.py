@@ -1,6 +1,6 @@
 import pytest
 
-from yconf import loads, errors
+from snam import loads, errors
 
 
 def test_include_error(mktmpfile):
@@ -19,8 +19,8 @@ def test_include_error(mktmpfile):
           !include {listfile}
         ''')
     assert e.exconly() == \
-        'yconf.errors.IncludeMismatchError: (stream):2:19: Trying to ' \
-        'include `<class \'list\'>` inside `<class \'yconf.parser.Meld\'>`: ' \
+        'snam.errors.IncludeMismatchError: (stream):2:19: Trying to ' \
+        'include `<class \'list\'>` inside `<class \'snam.parser.Meld\'>`: ' \
         f'VALUE `{listfile}`'
 
     # test_include_dict_inside_chain
@@ -30,15 +30,15 @@ def test_include_error(mktmpfile):
           !include {dictfile}
         ''')
     assert e.exconly() == \
-        'yconf.errors.IncludeMismatchError: (stream):2:19: Trying to ' \
-        'include `<class \'yconf.parser.Meld\'>` inside `<class \'list\'>`: ' \
+        'snam.errors.IncludeMismatchError: (stream):2:19: Trying to ' \
+        'include `<class \'snam.parser.Meld\'>` inside `<class \'list\'>`: ' \
         f'VALUE `{dictfile}`'
 
     with pytest.raises(errors.ExpectedTokenError) as e:
         loads('!include')
 
     assert e.exconly() == \
-        'yconf.errors.ExpectedTokenError: (stream):0:0: Expected VALUE, ' \
+        'snam.errors.ExpectedTokenError: (stream):0:0: Expected VALUE, ' \
         'found: EOF `None`'
 
 

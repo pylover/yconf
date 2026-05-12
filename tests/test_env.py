@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from yconf import loads, errors
+from snam import loads, errors
 
 
 def test_env(mktmpfile):
@@ -12,5 +12,5 @@ def test_env(mktmpfile):
         loads('!env')
 
     assert e.exconly() == \
-        'yconf.errors.ExpectedTokenError: (stream):0:0: Expected ' \
+        'snam.errors.ExpectedTokenError: (stream):0:0: Expected ' \
         'VALUE, found: EOF `None`'

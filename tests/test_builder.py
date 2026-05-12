@@ -1,7 +1,7 @@
 import os
 from collections import OrderedDict
 
-from yconf import dump, dumps, loads
+from snam import dump, dumps, loads
 
 
 def test_dump(tmpdir):

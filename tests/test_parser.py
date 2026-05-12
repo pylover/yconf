@@ -1,6 +1,6 @@
 import pytest
 
-from yconf import loads, Meld, errors
+from snam import loads, Meld, errors
 
 
 def test_parse_comment():
@@ -19,14 +19,14 @@ def test_parse_unknowntag():
         loads('!')
 
     assert e.exconly() == \
-        'yconf.errors.ExpectedTokenError: (stream):0:0: Expected TAG, ' \
+        'snam.errors.ExpectedTokenError: (stream):0:0: Expected TAG, ' \
         'found: EOF `None`'
 
     with pytest.raises(errors.UnknownTagError) as e:
         loads('!foobar')
 
     assert e.exconly() == \
-        'yconf.errors.UnknownTagError: (stream):0:0: Unknown: ' \
+        'snam.errors.UnknownTagError: (stream):0:0: Unknown: ' \
         'TAG `foobar`'
 
 
@@ -89,7 +89,7 @@ def test_parse_errors():
     with pytest.raises(errors.InvalidTokenError) as e:
         loads(':')
     assert e.exconly() == \
-        'yconf.errors.InvalidTokenError: (stream):0:0: Invalid token: ' \
+        'snam.errors.InvalidTokenError: (stream):0:0: Invalid token: ' \
         'COLON `:`'
 
     with pytest.raises(errors.InvalidTokenError) as e:
@@ -98,7 +98,7 @@ def test_parse_errors():
           baz
         ''')
     assert e.exconly() == \
-        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
+        'snam.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
         'VALUE `baz`'
 
     with pytest.raises(errors.InvalidTokenError) as e:
@@ -107,7 +107,7 @@ def test_parse_errors():
           - baz
         ''')
     assert e.exconly() == \
-        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
+        'snam.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
         'DASH `-`'
 
     with pytest.raises(errors.InvalidTokenError) as e:
@@ -116,7 +116,7 @@ def test_parse_errors():
           bar
         ''')
     assert e.exconly() == \
-        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
+        'snam.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
         'VALUE `bar`'
 
     with pytest.raises(errors.InvalidTokenError) as e:
@@ -125,7 +125,7 @@ def test_parse_errors():
           bar: 1
         ''')
     assert e.exconly() == \
-        'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
+        'snam.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
         'KEY `bar`'
 
 

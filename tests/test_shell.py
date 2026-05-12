@@ -1,6 +1,6 @@
 import pytest
 
-from yconf import loads, errors
+from snam import loads, errors
 
 
 def test_shell():
@@ -11,5 +11,5 @@ def test_shell():
         loads('!shell')
 
     assert e.exconly() == \
-        'yconf.errors.ExpectedTokenError: (stream):0:0: Expected ' \
+        'snam.errors.ExpectedTokenError: (stream):0:0: Expected ' \
         'VALUE, found: EOF `None`'

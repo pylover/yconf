@@ -1,6 +1,6 @@
 import pytest
 
-from yconf import load, errors
+from snam import load, errors
 
 
 def test_load(mktmpfile, fileio):
@@ -28,5 +28,5 @@ def test_load(mktmpfile, fileio):
         load(file)
 
     assert e.exconly() == \
-        f'yconf.errors.UnknownTagError: {file}:0:0: Unknown: ' \
+        f'snam.errors.UnknownTagError: {file}:0:0: Unknown: ' \
         'TAG `foobar:`'

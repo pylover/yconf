@@ -1,16 +1,25 @@
-# yconf
+# snam
+
+Still Not A Markup!
+
+Another YAML parser and builder featured by:
+
+- Include other files.
+- Expand environment varibales.
+- Execute and use the shell commands standard output.
+- Merge/Melt mappings.
 
 
 ## Install
 
 ```bash
-pip install yconf
+pip install snam
 ```
 
 ## quickstart
 
 ```python
-from yconf import loads
+from snam import loads
 
 yamldoc = '''
 foo:
@@ -40,7 +49,7 @@ assert obj.fruites == ['cherry', 'melon', 'banana', 'pineapple']
 
 You may user `loads(str)` function to parse `YAML` string, and `load(file)` 
 to parse `file-like` object or filename. these functions return a 
-`yconf.Meld` object. The `Meld` object is subclass of the Python's dictionary
+`snam.Meld` object. The `Meld` object is subclass of the Python's dictionary
 but in addtion you can access the members by `getattr`, `setattr` and 
 `delattr` operations.
 
@@ -86,7 +95,7 @@ with open('foo.yml') as file:
 
 ### Dump
 
-Use `yconf.dumps(obj) -> str`, `yconf.dump(obj, file)` and also 
+Use `snam.dumps(obj) -> str`, `snam.dump(obj, file)` and also 
 `meld >>= filename`.
 
 ```python

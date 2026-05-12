@@ -1,5 +1,5 @@
 [run]
-source = yconf
+source = snam
 patch = subprocess
 omit = 
   tests
