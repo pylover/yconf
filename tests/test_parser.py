@@ -19,8 +19,8 @@ def test_parse_unknowntag():
         loads('!')
 
     assert e.exconly() == \
-        'yconf.errors.ExpectedTokenError: (stream):0:0: Expected TAG, found: ' \
-        'EOF `None`'
+        'yconf.errors.ExpectedTokenError: (stream):0:0: Expected TAG, ' \
+        'found: EOF `None`'
 
     with pytest.raises(errors.UnknownTagError) as e:
         loads('!foobar')
@@ -111,7 +111,7 @@ def test_parse_errors():
         'DASH `-`'
 
     with pytest.raises(errors.InvalidTokenError) as e:
-        m = loads('''
+        loads('''
           - foo
           bar
         ''')
@@ -166,35 +166,27 @@ def test_parse_meld():
 
 
 def test_parse_literal():
-    n = loads('')
-    assert n is None
+    assert loads('') is None
+    assert loads('   ') is None
+    assert loads('\n\n\n') is None
+    assert loads('None') is None
+    assert loads('none') is None
+    assert loads('null') is None
 
-    n = loads('   ')
-    assert n is None
+    assert loads('yes') is True
+    assert loads('true') is True
+    assert loads('on') is True
+    assert loads('no') is False
+    assert loads('false') is False
+    assert loads('off') is False
 
-    n = loads('\n\n\n')
-    assert n is None
-
-    n = loads('foo')
-    assert n == 'foo'
-
-    n = loads('"foo"')
-    assert n == 'foo'
-
-    n = loads('\'foo\'')
-    assert n == 'foo'
-
-    n = loads('foo\n\n\n')
-    assert n == 'foo'
-
-    n = loads('\nfoo')
-    assert n == 'foo'
-
-    n = loads(':foo')
-    assert n == ':foo'
-
-    n = loads('.73')
-    assert n == .73
+    assert loads('foo') == 'foo'
+    assert loads('"foo"') == 'foo'
+    assert loads('\'foo\'') == 'foo'
+    assert loads('foo\n\n\n') == 'foo'
+    assert loads('\nfoo') == 'foo'
+    assert loads(':foo') == ':foo'
+    assert loads('.73') == .73
 
 
 def test_parse_indentation():

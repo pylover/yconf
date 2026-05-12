@@ -121,7 +121,7 @@ def tokenize(text):
             remaining = content[2:].strip()
             yield from _process_content(remaining, lno, indent + 2)
         elif content == '-':
-             yield Token(Kind.DASH, '-', lno, indent)
+            yield Token(Kind.DASH, '-', lno, indent)
         elif content.startswith('!'):
             yield from _process_tag(content, lno, indent)
         else:

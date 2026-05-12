@@ -107,13 +107,13 @@ class Parser:
             return self._parse_block(nxtok.value - 1)
 
         elif nxtok.iskey():
-             # Inline map after dash
-             # just ineject an indetat into the self._tokq
-             self._tokq.insert(
-                 0,
-                 Token(Kind.INDENT, nxtok.column, nxtok.line, 0)
-             )
-             return self._parse_block(dash.column)
+            # Inline map after dash
+            # just ineject an indetat into the self._tokq
+            self._tokq.insert(
+                0,
+                Token(Kind.INDENT, nxtok.column, nxtok.line, 0)
+            )
+            return self._parse_block(dash.column)
 
         elif nxtok.isexclam():
             return self._parse_tag()
@@ -151,13 +151,19 @@ class Parser:
                 or (val.startswith("'") and val.endswith("'")):
             return val[1:-1]
 
-        v_lower = val.lower()
-        if v_lower == 'true': return True
-        if v_lower == 'false': return False
-        if v_lower == 'null': return None
+        lower = val.lower()
+        if lower in ('yes', 'true', 'on'):
+            return True
+
+        if lower in ('no', 'false', 'off'):
+            return False
+
+        if lower in ('null', 'none'):
+            return None
 
         try:
-            if '.' in val: return float(val)
+            if '.' in val:
+                return float(val)
             return int(val)
         except ValueError:
             return val
@@ -182,7 +188,6 @@ class Parser:
             )
 
             return result.stdout.strip()
-
 
         raise errors.UnknownTagError(tagtok, self._filename)
 
@@ -264,7 +269,7 @@ class Parser:
 
                 # Just a scalar?
                 if nxtok and nxtok.isvalue():
-                    self.consume() # indent
+                    self.consume(Kind.INDENT)
                     return self._parse_primitive(self.consume().value)
 
                 else:

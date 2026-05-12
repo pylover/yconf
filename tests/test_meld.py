@@ -13,7 +13,7 @@ def test_meld_exportfile(tmpdir):
 
     m >>= filename
     with open(filename) as f:
-        assert f.read() == f'foo: bar\n'
+        assert f.read() == 'foo: bar\n'
 
 
 def test_meld_mergefile(mktmpfile):
