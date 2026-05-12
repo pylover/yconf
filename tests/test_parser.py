@@ -130,6 +130,9 @@ def test_parse_errors():
 
 
 def test_parse_meld():
+    m = loads('foo: postgresql://:@/foo')
+    assert m.foo == 'postgresql://:@/foo'
+
     m = loads('foo:')
     assert m.foo is None
 
