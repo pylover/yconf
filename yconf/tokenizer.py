@@ -67,6 +67,13 @@ def _process_tag(content, lno, col):
     yield Token(Kind.VALUE, value, lno, col + 1 + len(spaces) + len(tag))
 
 
+def _process_value(content, lno, col):
+    if content.startswith('!'):
+        yield from _process_tag(content, lno, col)
+    else:
+        yield Token(Kind.VALUE, content, lno, col)
+
+
 def _process_content(content, lno, col):
     if not content:
         return
@@ -83,13 +90,14 @@ def _process_content(content, lno, col):
             key, val = match.groups()
             yield Token(Kind.KEY, key.strip(), lno, col)
             yield Token(Kind.COLON, ':', lno, col + len(key))
-            if val.strip():
-                yield Token(Kind.VALUE, val.strip(), lno, col + len(key) + 2)
+            val = val.strip()
+            if val:
+                yield from _process_value(val, lno, col + len(key) + 2)
         else:
             # Fallback for weird cases
             yield Token(Kind.VALUE, content, lno, col)
     else:
-        yield Token(Kind.VALUE, content, lno, col)
+        yield from _process_value(content, lno, col)
 
 
 def tokenize(text):

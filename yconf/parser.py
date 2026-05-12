@@ -122,6 +122,9 @@ class Parser:
              )
              return self._parse_block(dash.column)
 
+        elif nxtok.isexclam():
+            return self._parse_tag()
+
         elif nxtok.iscolon():
             self.consume(Kind.COLON)
             return self._parse_block(dash.column)
@@ -136,6 +139,9 @@ class Parser:
         nxtok = self.peek()
         if nxtok.isvalue():
             return keytok.value, self._parse_primitive(self.consume().value)
+        elif nxtok.isexclam():
+            val = self._parse_tag()
+            return keytok.value, val
         elif nxtok.isindent():
             # Nested
             if nxtok.value > indent:
@@ -165,8 +171,7 @@ class Parser:
         except ValueError:
             return val
 
-    def _parse_tag(self, this):
-        self.consume(Kind.INDENT)
+    def _parse_tag(self):
         self.consume(Kind.EXCLAM)
         tagtok = self.consume(Kind.TAG)
         if tagtok.value == 'include':
@@ -216,7 +221,8 @@ class Parser:
                     this[key] = val
 
             elif nxtok.isexclam():
-                val = self._parse_tag(this)
+                self.consume(Kind.INDENT)
+                val = self._parse_tag()
                 if this is None:
                     if isinstance(val, Meld):
                         this = val
