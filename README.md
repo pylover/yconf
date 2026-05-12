@@ -1,6 +1,13 @@
 # snam
+### Still Not A Markup!
 
-Still Not A Markup!
+[![PyPI](http://img.shields.io/pypi/v/snam.svg)](https://pypi.python.org/pypi/snam)
+[![Build](https://github.com/pylover/snam/actions/workflows/build.yml/badge.svg)](https://github.com/pylover/snam/actions/workflows/build.yml)
+[![Coverage Status](https://coveralls.io/repos/github/pylover/snam/badge.svg?branch=master)](https://coveralls.io/github/pylover/snam?branch=master)
+[![Documentation](https://img.shields.io/badge/Documentation-Ready-green.svg)](https://pylover.github.io/snam)
+[![Downloads](https://pepy.tech/badge/snam)](https://pepy.tech/project/snam)
+[![Downloads](https://pepy.tech/badge/snam/month)](https://pepy.tech/project/snam)
+[![Downloads](https://pepy.tech/badge/snam/week)](https://pepy.tech/project/snam)
 
 Another YAML parser and builder featured by:
 
