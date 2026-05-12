@@ -102,10 +102,7 @@ class Parser:
         dash = self.consume(Kind.DASH)
 
         nxtok = self.peek()
-        if nxtok.isvalue():
-            return self._parse_primitive(self.consume().value)
-
-        elif nxtok.isindent():
+        if nxtok.isindent():
             # Nested structure
             return self._parse_block(nxtok.value - 1)
 
@@ -126,7 +123,7 @@ class Parser:
             return self._parse_block(dash.column)
 
         else:
-            raise errors.ExpectedTokenError(nxtok, 'VALUE', self._filename)
+            return self._parse_primitive(self.consume().value)
 
     def _parse_mappingitem(self, indent):
         self.consume(Kind.INDENT)

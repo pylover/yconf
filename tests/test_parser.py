@@ -3,7 +3,18 @@ import pytest
 from yconf import loads, Meld, errors
 
 
-def test_parser_unknowntag():
+def test_parse_comment():
+    m = loads('''
+      # lorem ipsum
+      - :  # abjad hovvaz
+        bar: # ghareshat
+        baz: 2
+    ''')
+    assert m[0].bar is None
+    assert m[0].baz == 2
+
+
+def test_parse_unknowntag():
     with pytest.raises(errors.ExpectedTokenError) as e:
         loads('!')
 
@@ -19,7 +30,7 @@ def test_parser_unknowntag():
         'TAG `foobar`'
 
 
-def test_parser_list():
+def test_parse_list():
     m = loads('''
       - :
         bar: 1
@@ -74,10 +85,9 @@ def test_parser_list():
     assert m[2].qux == 4
 
 
-def test_parser_errors():
+def test_parse_errors():
     with pytest.raises(errors.InvalidTokenError) as e:
         loads(':')
-
     assert e.exconly() == \
         'yconf.errors.InvalidTokenError: (stream):0:0: Invalid token: ' \
         'COLON `:`'
@@ -87,7 +97,6 @@ def test_parser_errors():
           foo: bar
           baz
         ''')
-
     assert e.exconly() == \
         'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
         'VALUE `baz`'
@@ -97,7 +106,6 @@ def test_parser_errors():
           foo: 2
           - baz
         ''')
-
     assert e.exconly() == \
         'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
         'DASH `-`'
@@ -107,7 +115,6 @@ def test_parser_errors():
           - foo
           bar
         ''')
-
     assert e.exconly() == \
         'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
         'VALUE `bar`'
@@ -117,13 +124,12 @@ def test_parser_errors():
           - foo
           bar: 1
         ''')
-
     assert e.exconly() == \
         'yconf.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
         'KEY `bar`'
 
 
-def test_parser_meld():
+def test_parse_meld():
     m = loads('foo:')
     assert m.foo is None
 
@@ -184,11 +190,14 @@ def test_parse_literal():
     n = loads('\nfoo')
     assert n == 'foo'
 
+    n = loads(':foo')
+    assert n == ':foo'
+
     n = loads('.73')
     assert n == .73
 
 
-def test_parser_indentation():
+def test_parse_indentation():
     m = loads('\n'.join([
         'foo:',
         '  bar: baz',
