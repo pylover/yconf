@@ -23,7 +23,7 @@ class Token:
         self.column = column
 
     def __repr__(self):
-        return f"Token({self.kind.name}, {repr(self.value)})"
+        return f'{self.kind.name} `{self.value}`'
 
     def isnewline(self):
         return self.kind == Kind.NEWLINE
@@ -43,11 +43,11 @@ class Token:
     def isvalue(self):
         return self.kind == Kind.VALUE
 
-    def iscolon(self):
-        return self.kind == Kind.COLON
-
     def isexclam(self):
         return self.kind == Kind.EXCLAM
+
+    def iscolon(self):
+        return self.kind == Kind.COLON
 
 
 def _process_tag(content, lno, col):
@@ -75,10 +75,7 @@ def _process_value(content, lno, col):
 
 
 def _process_content(content, lno, col):
-    if not content:
-        return
-
-    if ':' == content:
+    if content == ':':
         yield Token(Kind.COLON, ':', lno, col)
 
     elif ':' in content:

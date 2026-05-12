@@ -74,16 +74,12 @@ class Parser:
 
     def peek(self, index=0):
         if len(self._tokq) <= index:
-            try:
-                while len(self._tokq) <= index:
-                    tok = next(self._tokgen)
-                    if tok.isnewline():
-                        continue
+            while len(self._tokq) <= index:
+                tok = next(self._tokgen)
+                if tok.isnewline():
+                    continue
 
-                    self._tokq.append(tok)
-
-            except StopIteration:
-                return None
+                self._tokq.append(tok)
 
         return self._tokq[index]
 
@@ -93,7 +89,7 @@ class Parser:
 
         tok = self._tokq.pop(0)
         self._consumed.append(tok)
-        while len(self._consumed) > 2:
+        while len(self._consumed) > 1:
             self._consumed.pop(0)
 
         if kind and tok.kind != kind:
@@ -125,9 +121,12 @@ class Parser:
         elif nxtok.isexclam():
             return self._parse_tag()
 
-        else:
+        elif nxtok.iscolon():
             self.consume(Kind.COLON)
             return self._parse_block(dash.column)
+
+        else:
+            raise errors.ExpectedTokenError(nxtok, 'VALUE', self._filename)
 
     def _parse_mappingitem(self, indent):
         self.consume(Kind.INDENT)
@@ -137,20 +136,17 @@ class Parser:
         nxtok = self.peek()
         if nxtok.isvalue():
             return keytok.value, self._parse_primitive(self.consume().value)
+
         elif nxtok.isexclam():
             val = self._parse_tag()
             return keytok.value, val
-        elif nxtok.isindent():
+
+        elif nxtok.isindent() and nxtok.value > indent:
             # Nested
-            if nxtok.value > indent:
-                return keytok.value, self._parse_block(indent)
-            else:
-                return keytok.value, None
+            return keytok.value, self._parse_block(indent)
 
-        elif nxtok.iseof():
+        else:
             return keytok.value, None
-
-        return keytok.value, None
 
     def _parse_primitive(self, val: str):
         # Strip quotes
@@ -196,13 +192,12 @@ class Parser:
     def _parse_block(self, min_indent):
         this = None
 
-        while not self.peek().iseof():
+        while True:
             tok = self.peek()
+            if tok.iseof():
+                return this
 
             # Check indentation to see if we've exited this block
-            if not tok.isindent():
-                raise errors.ExpectedTokenError(tok, 'INDENT', self._filename)
-
             indent = tok.value
             if indent <= min_indent:
                 break
@@ -210,9 +205,6 @@ class Parser:
             # Decide list or map
             # Advance to see what's after indent
             nxtok = self.peek(1)
-            if nxtok is None:
-                return this
-
             if nxtok.isdash():
                 if this is None:
                     this = []
@@ -245,10 +237,14 @@ class Parser:
 
                     else:
                         return val
+
                 elif isinstance(this, Meld):
                     if isinstance(val, list):
                         raise errors.IncludeMismatchError(
-                            nxtok, list, type(val), self._filename
+                            self._consumed[-1],
+                            Meld,
+                            type(val),
+                            self._filename
                         )
 
                     this |= val
@@ -257,7 +253,10 @@ class Parser:
                     # list
                     if not isinstance(val, list):
                         raise errors.IncludeMismatchError(
-                            nxtok, list, type(val), self._filename
+                            self._consumed[-1],
+                            list,
+                            type(val),
+                            self._filename
                         )
 
                     this.extend(val)
@@ -271,7 +270,8 @@ class Parser:
                     self.consume() # indent
                     return self._parse_primitive(self.consume().value)
 
-                # break
+                else:
+                    raise errors.InvalidTokenError(nxtok, self._filename)
 
         return this
 

@@ -4,6 +4,13 @@ from yconf import loads, Meld, errors
 
 
 def test_parser_unknowntag():
+    with pytest.raises(errors.ExpectedTokenError) as e:
+        loads('!')
+
+    assert e.exconly() == \
+        'yconf.errors.ExpectedTokenError: (stream):0:0: Expected TAG, found: ' \
+        'EOF `None`'
+
     with pytest.raises(errors.UnknownTagError) as e:
         loads('!foobar')
 
@@ -68,6 +75,13 @@ def test_parser_list():
 
 
 def test_parser_errors():
+    with pytest.raises(errors.InvalidTokenError) as e:
+        loads(':')
+
+    assert e.exconly() == \
+        'yconf.errors.InvalidTokenError: (stream):0:0: Invalid token: ' \
+        'COLON `:`'
+
     with pytest.raises(errors.InvalidTokenError) as e:
         loads('''
           foo: bar
@@ -137,8 +151,15 @@ def test_parser_meld():
     assert m.foo.bar == 1
     assert m.foo.baz == 2
 
+    m = loads('''
+      foo:
+      bar: baz
+    ''')
+    assert m.foo is None
+    assert m.bar == 'baz'
 
-def test_parser_literal():
+
+def test_parse_literal():
     n = loads('')
     assert n is None
 
@@ -195,13 +216,3 @@ def test_parser_indentation():
             a: 1
     ''')
     assert m.foo.a == 1
-
-
-def test_parser_emptytag():
-    m = loads('''
-      foo:
-      bar: baz
-    ''')
-
-    assert m.foo is None
-    assert m.bar == 'baz'

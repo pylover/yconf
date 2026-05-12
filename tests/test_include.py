@@ -3,14 +3,63 @@ import pytest
 from yconf import loads, errors
 
 
-def test_include_emptymeld(mktmpfile):
-    qux = mktmpfile(name='qux.yml', content='''
-      foo: BAR
+def test_include_error(mktmpfile):
+    dictfile = mktmpfile(name='qux.yml', content='''
+      foo: bar
+    ''')
+    listfile = mktmpfile(name='qux.yml', content='''
+      - foo
+      - bar
     ''')
 
-    m = loads(f'!include {qux}')
+    # test_include_list_inside_dict
+    with pytest.raises(errors.IncludeMismatchError) as e:
+        loads(f'''
+          foo: bar
+          !include {listfile}
+        ''')
+    assert e.exconly() == \
+        'yconf.errors.IncludeMismatchError: (stream):2:19: Trying to ' \
+        'include `<class \'list\'>` inside `<class \'yconf.parser.Meld\'>`: ' \
+        f'VALUE `{listfile}`'
 
+    # test_include_dict_inside_chain
+    with pytest.raises(errors.IncludeMismatchError) as e:
+        loads(f'''
+          - baz
+          !include {dictfile}
+        ''')
+    assert e.exconly() == \
+        'yconf.errors.IncludeMismatchError: (stream):2:19: Trying to ' \
+        'include `<class \'yconf.parser.Meld\'>` inside `<class \'list\'>`: ' \
+        f'VALUE `{dictfile}`'
+
+    with pytest.raises(errors.ExpectedTokenError) as e:
+        loads('!include')
+
+    assert e.exconly() == \
+        'yconf.errors.ExpectedTokenError: (stream):0:0: Expected VALUE, ' \
+        'found: EOF `None`'
+
+
+def test_include_emptydocument(mktmpfile):
+    dictfile = mktmpfile(name='qux.yml', content='''
+      foo: BAR
+    ''')
+    listfile = mktmpfile(name='qux.yml', content='''
+      - foo
+      - bar
+    ''')
+    literalfile = mktmpfile(name='qux.yml', content='foo')
+
+    m = loads(f'!include {dictfile}')
     assert m.foo == 'BAR'
+
+    m = loads(f'!include {listfile}')
+    assert m == ['foo', 'bar']
+
+    m = loads(f'!include {literalfile}')
+    assert m == 'foo'
 
 
 def test_include_chain(mktmpfile):
@@ -65,12 +114,3 @@ def test_include_meld(mktmpfile):
     assert m.baz.b == 2
     assert m.baz.c == 3
     assert m.baz.d == 4
-
-
-def test_include_error(mktmpfile):
-    with pytest.raises(errors.ExpectedTokenError) as e:
-        loads('!include')
-
-    assert e.exconly() == \
-        'yconf.errors.ExpectedTokenError: (stream):0:0: Expected VALUE, ' \
-        'found: EOF `None`'
