@@ -3,13 +3,13 @@ import pytest
 from yconf import loads, Meld, errors
 
 
-# def test_parser_unknowntag():
-#     with pytest.raises(errors.UnknownTagError) as e:
-#         loads('!foobar:')
-#
-#     assert e.exconly() == \
-#         'yconf.errors.UnknownTagError: (stream):0:0: Unknown tag: ' \
-#         'foobar: tag `foobar`'
+def test_parser_unknowntag():
+    with pytest.raises(errors.UnknownTagError) as e:
+        loads('!foobar')
+
+    assert e.exconly() == \
+        'yconf.errors.UnknownTagError: (stream):0:0: Unknown: ' \
+        'TAG `foobar`'
 
 
 def test_parser_list():

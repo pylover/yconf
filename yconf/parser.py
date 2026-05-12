@@ -125,11 +125,9 @@ class Parser:
         elif nxtok.isexclam():
             return self._parse_tag()
 
-        elif nxtok.iscolon():
+        else:
             self.consume(Kind.COLON)
             return self._parse_block(dash.column)
-
-        return None
 
     def _parse_mappingitem(self, indent):
         self.consume(Kind.INDENT)
@@ -177,6 +175,21 @@ class Parser:
         if tagtok.value == 'include':
             filenametok = self.consume(Kind.VALUE)
             return load(filenametok.value)
+
+        if tagtok.value == 'env':
+            return os.environ.get(self.consume(Kind.VALUE).value)
+
+        if tagtok.value == 'shell':
+            result = subprocess.run(
+                self.consume(Kind.VALUE).value,
+                shell=True,
+                check=True,
+                text=True,
+                capture_output=True,
+            )
+
+            return result.stdout.strip()
+
 
         raise errors.UnknownTagError(tagtok, self._filename)
 
@@ -258,7 +271,7 @@ class Parser:
                     self.consume() # indent
                     return self._parse_primitive(self.consume().value)
 
-                break
+                # break
 
         return this
 

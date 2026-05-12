@@ -28,4 +28,4 @@ class ExpectedTokenError(YConfException):
 
 class UnknownTagError(YConfException):
     def __init__(self, tok, filename=None):
-        super().__init__(tok, f'Unknown tag: {tok.value}', filename)
+        super().__init__(tok, 'Unknown', filename)
