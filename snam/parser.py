@@ -76,11 +76,7 @@ class Parser:
     def peek(self, index=0):
         if len(self._tokq) <= index:
             while len(self._tokq) <= index:
-                tok = next(self._tokgen)
-                if tok.isnewline():
-                    continue
-
-                self._tokq.append(tok)
+                self._tokq.append(next(self._tokgen))
 
         return self._tokq[index]
 

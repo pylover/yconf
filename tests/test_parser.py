@@ -3,11 +3,6 @@ import pytest
 from snam import loads, Meld, errors
 
 
-# def test_parse_lineescape():
-#     m = loads('foo: bar\\\n baz')
-#     assert m.foo == 'bar baz'
-
-
 def test_parse_inline_python_objects():
     m = loads('''
       - {'FOO': 73}

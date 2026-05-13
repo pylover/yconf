@@ -2,12 +2,16 @@ import re
 from enum import Enum, auto
 
 
+KEYPATTERN = re.compile(r'^([^\{\}\[\]\(\)\'":]+):\s*(.*)$')
+TAGPATTERN = re.compile(r'(\w+)(\s+)(.+)')
+LINEPATTERN = re.compile(r'^.*$', re.MULTILINE)
+
+
 class Kind(Enum):
     INDENT = auto()
     KEY = auto()
     VALUE = auto()
     DASH = auto()
-    NEWLINE = auto()
     COLON = auto()
     EOF = auto()
     INCLUDE = auto()
@@ -24,9 +28,6 @@ class Token:
 
     def __repr__(self):
         return f'{self.kind.name} `{self.value}`'
-
-    def isnewline(self):
-        return self.kind == Kind.NEWLINE
 
     def iseof(self):
         return self.kind == Kind.EOF
@@ -56,7 +57,7 @@ def _process_tag(content, lno, col):
     if not content:
         return
 
-    m = re.match(r'(\w+)(\s+)(.+)', content)
+    m = TAGPATTERN.match(content)
     if not m:
         # Fallback single word tag
         yield Token(Kind.TAG, content, lno, col)
@@ -79,13 +80,11 @@ def _process_content(content, lno, col):
         yield Token(Kind.COLON, ':', lno, col)
 
     elif ':' in content:
-        # Match key: value or key: (next line value)
-        # We look for ':' followed by optional whitespace
-        # FIXME: compile
-        # match = re.match(r'^([^:]+):\s*(.*)$', content)
-        match = re.match(r'^([^\{\}\[\]\(\)\'":]+):\s*(.*)$', content)
-        if match:
-            key, val = match.groups()
+        # match key: value or key: (next line value)
+        # we look for ':' followed by optional whitespace
+        m = KEYPATTERN.match(content)
+        if m:
+            key, val = m.groups()
             yield Token(Kind.KEY, key.strip(), lno, col)
             yield Token(Kind.COLON, ':', lno, col + len(key))
             val = val.strip()
@@ -100,7 +99,7 @@ def _process_content(content, lno, col):
 
 def tokenize(text):
     lno = -1
-    for m in re.finditer(r'^.*$', text, re.MULTILINE):
+    for m in LINEPATTERN.finditer(text):
         line = m.group()
 
         # line number
@@ -130,8 +129,5 @@ def tokenize(text):
             yield from _process_tag(content, lno, indent)
         else:
             yield from _process_content(content, lno, indent)
-
-        # FIXME: maybe no need this token at all
-        yield Token(Kind.NEWLINE, None, lno, len(line))
 
     yield Token(Kind.EOF, None, lno, 0)
