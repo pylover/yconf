@@ -99,9 +99,12 @@ def _process_content(content, lno, col):
 
 
 def tokenize(text):
-    lines = text.splitlines()
-    lno = 0
-    for lno, line in enumerate(lines):
+    lno = -1
+    for m in re.finditer(r'^.*$', text, re.MULTILINE):
+        line = m.group()
+
+        # line number
+        lno += 1
 
         # Skip empty lines or pure comments
         stripped = line.strip()

@@ -3,6 +3,11 @@ import pytest
 from snam import loads, Meld, errors
 
 
+# def test_parse_lineescape():
+#     m = loads('foo: bar\\\n baz')
+#     assert m.foo == 'bar baz'
+
+
 def test_parse_inline_python_objects():
     m = loads('''
       - {'FOO': 73}
@@ -102,12 +107,6 @@ def test_parse_list():
 
 def test_parse_errors():
     with pytest.raises(errors.InvalidTokenError) as e:
-        loads(':')
-    assert e.exconly() == \
-        'snam.errors.InvalidTokenError: (stream):0:0: Invalid token: ' \
-        'COLON `:`'
-
-    with pytest.raises(errors.InvalidTokenError) as e:
         loads('''
           foo: bar
           baz
@@ -115,6 +114,12 @@ def test_parse_errors():
     assert e.exconly() == \
         'snam.errors.InvalidTokenError: (stream):2:10: Invalid token: ' \
         'VALUE `baz`'
+
+    with pytest.raises(errors.InvalidTokenError) as e:
+        loads(':')
+    assert e.exconly() == \
+        'snam.errors.InvalidTokenError: (stream):0:0: Invalid token: ' \
+        'COLON `:`'
 
     with pytest.raises(errors.InvalidTokenError) as e:
         loads('''
