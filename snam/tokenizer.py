@@ -82,7 +82,8 @@ def _process_content(content, lno, col):
         # Match key: value or key: (next line value)
         # We look for ':' followed by optional whitespace
         # FIXME: compile
-        match = re.match(r'^([^:]+):\s*(.*)$', content)
+        # match = re.match(r'^([^:]+):\s*(.*)$', content)
+        match = re.match(r'^([^\{\}\[\]\(\)\'":]+):\s*(.*)$', content)
         if match:
             key, val = match.groups()
             yield Token(Kind.KEY, key.strip(), lno, col)

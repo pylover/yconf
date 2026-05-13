@@ -1,4 +1,5 @@
 import io
+import re
 import os
 import copy
 import subprocess
@@ -150,6 +151,17 @@ class Parser:
         if (val.startswith('"') and val.endswith('"')) \
                 or (val.startswith("'") and val.endswith("'")):
             return val[1:-1]
+
+        # FIXME: compile
+        if re.match(r'^\{.*\}|\[.*\]$', val):
+            try:
+                obj = eval(val)
+                if isinstance(obj, dict):
+                    return Meld(obj)
+
+                return obj
+            except:  # noqa: E722
+                pass
 
         lower = val.lower()
         if lower in ('yes', 'true', 'on'):

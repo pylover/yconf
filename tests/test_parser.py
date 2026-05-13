@@ -3,6 +3,21 @@ import pytest
 from snam import loads, Meld, errors
 
 
+def test_parse_inline_python_objects():
+    m = loads('''
+      - {'FOO': 73}
+      - foo: ['foo', 'bar']
+    ''')
+    assert m[0].FOO == 73
+    assert m[1].foo == ['foo', 'bar']
+
+    assert loads('[1, 2, 3]', [1, 2, 3])
+    assert loads('{1, 2, 3}') == {1, 2, 3}
+    assert loads('{"foo": "bar"}', dict(foo="bar"))
+    assert loads('{"foo": 73}', dict(foo=73))
+    assert loads('[foo]') == '[foo]'
+
+
 def test_parse_comment():
     m = loads('''
       # lorem ipsum
