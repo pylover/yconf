@@ -1,2 +1,2 @@
-- line escaping
+- line escaping and yaml '|' '>' features
 - documentation

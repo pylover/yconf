@@ -13,8 +13,9 @@ def test_parse_inline_python_objects():
 
     assert loads('[1, 2, 3]', [1, 2, 3])
     assert loads('{1, 2, 3}') == {1, 2, 3}
-    assert loads('{"foo": "bar"}', dict(foo="bar"))
-    assert loads('{"foo": 73}', dict(foo=73))
+    assert loads('{"foo": "bar"}') == dict(foo="bar")
+    assert loads('{"foo": 73}') == dict(foo=73)
+    assert loads('("foo", 73)') == ('foo', 73)
     assert loads('[foo]') == '[foo]'
 
 

@@ -8,6 +8,9 @@ from .tokenizer import tokenize, Token, Kind
 from . import errors
 
 
+PYOBJPATTERN = re.compile(r'^\{.*\}|\[.*\]|\(.*\)$')
+
+
 class Meld(dict):
     def __init__(self, data=None, root=None):
         if isinstance(data, str):
@@ -148,8 +151,7 @@ class Parser:
                 or (val.startswith("'") and val.endswith("'")):
             return val[1:-1]
 
-        # FIXME: compile
-        if re.match(r'^\{.*\}|\[.*\]$', val):
+        if PYOBJPATTERN.match(val):
             try:
                 obj = eval(val)
                 if isinstance(obj, dict):
